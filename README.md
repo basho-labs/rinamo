@@ -7,3 +7,5 @@ make
 
 To run unit tests:
 make test
+
+See src/Notes.md and src/TODO.md
