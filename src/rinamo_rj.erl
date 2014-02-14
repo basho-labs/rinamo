@@ -24,15 +24,15 @@
 
 
 create_bucket({BucketName, SolrSchema, _RawSchema}) ->
-	%% unimplemented, store RawSchema as bucket metadata
-	rj_yz:store_schema(BucketName, SolrSchema).
+    %% unimplemented, store RawSchema as bucket metadata
+    rj_yz:store_schema(BucketName, SolrSchema).
 
 get_item({BucketName, SolrQuery}) ->
-	ok.
-	
+    ok.
+    
 
 put_item({BucketeName, Item}) ->
-	ok.
+    ok.
 
 query({BucketName, Query}) ->
-	ok.
+    ok.

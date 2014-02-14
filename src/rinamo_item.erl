@@ -27,26 +27,26 @@
 -endif.
 
 put_dynamo_to_solr(DynamoPut) ->
-	%% unimplemented: conditional puts, accounting, return item
-	BucketName = proplists:get_value("TableName", DynamoPut),
-	Item = proplists:get_value("Item", DynamoPut),
-	{BucketName, Item}.
+    %% unimplemented: conditional puts, accounting, return item
+    BucketName = proplists:get_value("TableName", DynamoPut),
+    Item = proplists:get_value("Item", DynamoPut),
+    {BucketName, Item}.
 
 get_dynamo_to_solr(DynamoGet) ->
-	%% unimplemented: consistent read, accounting
-	BucketName = proplists:get_value("TableName", DynamoGet),
-	Keys = proplists:get_value("Keys", DynamoGet),
-	Attributes = proplists:get_value("Attributes", DynamoGet),
-	
-	{BucketName, Keys, Attributes}.
+    %% unimplemented: consistent read, accounting
+    BucketName = proplists:get_value("TableName", DynamoGet),
+    Keys = proplists:get_value("Keys", DynamoGet),
+    Attributes = proplists:get_value("Attributes", DynamoGet),
+    
+    {BucketName, Keys, Attributes}.
 
 -ifdef(TEST).
 
 put_dynamo_to_solr_test() ->
-	ok.
+    ok.
 
 get_dynamo_to_solr_test() ->
-	ok.
+    ok.
 
 -endif.
 

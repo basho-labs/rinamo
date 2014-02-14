@@ -23,6 +23,6 @@
 -include_lib("webmachine/include/webmachine.hrl").
 
 -record(ctx, {
-	    collection,
-	    solr_query}).
+        collection,
+        solr_query}).
 

@@ -26,7 +26,7 @@
 
 
 -define(TYPE_MAP, [{"S", {"string", false}}, {"N", {"number", false}}, {"B", {"text", false}},
-				   {"SS", {"string", true}}, {"NN", {"number", true}}, {"BB", {"text", true}}]).
+                   {"SS", {"string", true}}, {"NN", {"number", true}}, {"BB", {"text", true}}]).
 
 -ifdef(TEST).
 -define(DEFAULT_SCHEMA_XML, ?DEFAULT_SCHEMA_HEADER ++ ?DEFAULT_SCHEMA_MIDDLE ++ ?DEFAULT_SCHEMA_FOOTER).
