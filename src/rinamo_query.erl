@@ -162,10 +162,20 @@ dynamo_get_to_solr_test() ->
 	Actual = dynamo_get_to_solr(Data),
 	?assertEqual(Expected, Actual).
 
-% dynamo_query_to_solr_test() ->
-% 	Expected = ok,
-% 	Actual = dynamo_query_to_solr(undefined),
-% 	?assertEqual(Expected, Actual).
+dynamo_query_to_solr_test() ->
+	KeyConditions = [
+		{"Key1", [{"S", "Value1"}], "EQ"},
+		{"Key2", [{"N", "0"}], "GT"},
+		{"Key3", [{"N", "0"}], "GE"},
+		{"Key4", [{"N", "10"}], "LT"},
+		{"Key5", [{"N", "10"}], "LE"},
+		{"Key6", [{"N", "0"}, {"N", "10"}], "BETWEEN"},
+		{"Key7", [{"S", "Valu"}], "BEGINS_WITH"}],
+	DynamoQuery = [{"KeyConditions", KeyConditions},
+			 {"TableName", "TestTable"}],
+	Expected = [{"q", "Key1:Value1 AND Key2:[1 TO *] AND Key3:[0 TO *] AND Key4:[* TO 9] AND Key5:[* TO 10] AND Key6:[0 TO 10] AND Key7:Valu*"}],
+	Actual = dynamo_query_to_solr(DynamoQuery),
+	?assertEqual(Expected, Actual).
 
 dynamo_scan_to_solr_test() ->
 	Expected = ok,
