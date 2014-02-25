@@ -1,0 +1,23 @@
+%% @doc To enable Rinamo http interface set this 'on'.
+%% @datatype enum on, off
+{mapping, "rinamo", "rinamo.enabled", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "rinamo.enabled",
+  fun(Conf) ->
+          Setting = cuttlefish:conf_get("rinamo", Conf),
+          case Setting of
+              on -> true;
+              off -> false;
+              _Default -> false
+          end
+  end}.
+
+%% @doc endpoint_prefix is the first part of all URLS used by Rinamo HTTP endpoints.
+%% @datatype string
+{mapping, "rinamo.endpoint_prefix", "rinamo.endpoint_prefix", [
+  {default, "rinamo"}
+]}.
