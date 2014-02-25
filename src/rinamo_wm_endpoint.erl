@@ -33,7 +33,9 @@ init(_) ->
 
 %% TODO, check configuration, riak/solr status?
 service_available(ReqData, Context) ->
-	{true, ReqData, Context}.
+	{
+		rinamo_config:is_enabled(), ReqData, Context
+	}.
 
 allowed_methods(ReqData, Context) ->
 	{['POST'], ReqData, Context}.

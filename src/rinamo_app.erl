@@ -25,8 +25,6 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
--define(BASE, "rinamo").
-
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
@@ -55,5 +53,5 @@ props() ->
 
 routes() ->
     [
-        {[?BASE], rinamo_wm_endpoint, props()}
+        {[rinamo_config:endpoint_prefix()], rinamo_wm_endpoint, props()}
     ].
