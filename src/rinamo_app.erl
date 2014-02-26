@@ -30,12 +30,12 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    case rj_http_config:is_enabled() of
+    case rinamo_config:is_enabled() of
         true -> add_routes();
         _ -> ok
     end,
     
-    riak_json_http_sup:start_link().
+    rinamo_sup:start_link().
 
 stop(_State) ->
     %TODO: Unregister Routes
