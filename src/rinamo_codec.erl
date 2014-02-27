@@ -1,23 +1,3 @@
-%% -------------------------------------------------------------------
-%%
-%% Copyright (c) 2014 Basho Technologies, Inc.
-%%
-%% This file is provided to you under the Apache License,
-%% Version 2.0 (the "License"); you may not use this file
-%% except in compliance with the License.  You may obtain
-%% a copy of the License at
-%%
-%%   http://www.apache.org/licenses/LICENSE-2.0
-%%
-%% Unless required by applicable law or agreed to in writing,
-%% software distributed under the License is distributed on an
-%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-%% KIND, either express or implied.  See the License for the
-%% specific language governing permissions and limitations
-%% under the License.
-%%
-%% -------------------------------------------------------------------
-
 -module(rinamo_codec).
 
 -export([decode_get_item/1, encode_get_item_response/1,
@@ -137,13 +117,13 @@ decode_describe_table(Request) ->
     ok.
 
 decode_create_table(Request) ->
-    TableName = binary:bin_to_list(kvc:path("TableName", Request)),
+    TableName = kvc:path("TableName", Request),
     AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Request), []),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Request), []),
 
     SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Request), []),
-    ProvisionedThroughput = [{"ReadCapacityUnits", binary:bin_to_list(kvc:path("ProvisionedThroughput.ReadCapacityUnits", Request))},
-                             {"WriteCapacityUnits", binary:bin_to_list(kvc:path("ProvisionedThroughput.WriteCapacityUnits", Request))}],
+    ProvisionedThroughput = [{"ReadCapacityUnits", kvc:path("ProvisionedThroughput.ReadCapacityUnits", Request)},
+                             {"WriteCapacityUnits", kvc:path("ProvisionedThroughput.WriteCapacityUnits", Request)}],
 
     [{"TableName", TableName},
      {"Fields", AttributeDefinitions},

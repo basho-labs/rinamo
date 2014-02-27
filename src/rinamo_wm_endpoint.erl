@@ -1,24 +1,19 @@
-%% -------------------------------------------------------------------
-%%
-%% Copyright (c) 2014 Basho Technologies, Inc.
-%%
-%% This file is provided to you under the Apache License,
-%% Version 2.0 (the "License"); you may not use this file
-%% except in compliance with the License.  You may obtain
-%% a copy of the License at
-%%
-%%   http://www.apache.org/licenses/LICENSE-2.0
-%%
-%% Unless required by applicable law or agreed to in writing,
-%% software distributed under the License is distributed on an
-%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-%% KIND, either express or implied.  See the License for the
-%% specific language governing permissions and limitations
-%% under the License.
-%%
-%% -------------------------------------------------------------------
-
 -module(rinamo_wm_endpoint).
+
+-export([
+    init/1,
+    service_available/2,
+    allowed_methods/2,
+    content_types_accepted/2,
+    content_types_provided/2,
+    malformed_request/2,
+    resource_exists/2,
+    process_post/2,
+    post_is_create/2,
+    create_path/2,
+    accept_json/2,
+    to_json/2
+    ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
 
@@ -31,10 +26,11 @@
 init(_) ->
 	{ok, #ctx{}}.
 
-%% TODO, check configuration, riak/solr status?
 service_available(ReqData, Context) ->
 	{
-		rinamo_config:is_enabled(), ReqData, Context
+		rinamo_config:is_enabled(),
+		ReqData,
+		Context
 	}.
 
 allowed_methods(ReqData, Context) ->
@@ -44,28 +40,50 @@ content_types_accepted(ReqData, Context) ->
 	{[{"application/json", accept_json}, 
 	  {"application/x-amz-json-1.0", accept_json}], ReqData, Context}.
 
+content_types_provided(ReqData, Context) ->
+    {[{"application/json", to_json}], ReqData, Context}. 
+
 %% TODO, validate request?
 malformed_request(ReqData, Context) ->
 	{false, ReqData, Context}.
 
+resource_exists(ReqData, Context) ->
+	{true, ReqData, Context}.
+
+post_is_create(ReqData, Context) ->
+    {true, ReqData, Context}.
+
+process_post(ReqData, Context) ->
+	{true, ReqData, Context}.
+
+% TODO:  revisit, add tenancy & table_name / item_name
+create_path(ReqData, Context) ->
+    K = riak_core_util:unique_id_62(),
+    {K,
+     wrq:set_resp_header("Location",
+                         string:join(["base", K], "/"),
+                         ReqData),
+     Context}.
+
 %% Non-webmachine
 
 accept_json(ReqData, Context) ->
-	{Op, _ApiVersion} = dynamo_op(wrq:get_req_header("X-Amz-Target")),
+	Target = list_to_binary(wrq:get_req_header("X-Amz-Target", ReqData)),
+	{Op, _ApiVersion} = dynamo_op(Target),
 	Operation = case Op of
-		"BatchGetItem" -> {error, unimplemented};
-		"BatchWriteItem" -> {error, unimplemented};
 		"CreateTable" -> {rinamo_api, create_table};
-		"DeleteItem" -> {error, unimplemented};
+		"UpdateTable" -> {error, unimplemented};
 		"DeleteTable" -> {error, unimplemented};
+		"ListTables" -> {error, unimplemented};
 		"DescribeTable" -> {error, unimplemented};
 		"GetItem" -> {rinamo_api, get_item};
-		"ListTables" -> {error, unimplemented};
 		"PutItem" -> {rinamo_api, put_iem};
+		"UpdateItem" -> {error, unimplemented};
+		"DeleteItem" -> {error, unimplemented};
 		"Query" -> {rinamo_api, query};
 		"Scan" -> {error, unimplemented};
-		"UpdateItem" -> {error, unimplemented};
-		"UpdateTable" -> {error, unimplemented};
+		"BatchGetItem" -> {error, unimplemented};
+		"BatchWriteItem" -> {error, unimplemented};
 		_ -> {error, unimplemented}
 	end,
 
@@ -75,6 +93,9 @@ accept_json(ReqData, Context) ->
 			Result = erlang:apply(Module, Function, [wrq:req_body(ReqData)]),
 			{true, wrq:set_resp_body(Result, ReqData), Context}
 	end.
+
+to_json(ReqData, Context) ->
+  {"{}", ReqData, Context}.
 
 %% Internal
 
