@@ -5,14 +5,12 @@
     service_available/2,
     allowed_methods/2,
     content_types_accepted/2,
-    content_types_provided/2,
     malformed_request/2,
     resource_exists/2,
     process_post/2,
     post_is_create/2,
     create_path/2,
-    accept_json/2,
-    to_json/2
+    accept_json/2
     ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
@@ -39,9 +37,6 @@ allowed_methods(ReqData, Context) ->
 content_types_accepted(ReqData, Context) ->
 	{[{"application/json", accept_json}, 
 	  {"application/x-amz-json-1.0", accept_json}], ReqData, Context}.
-
-content_types_provided(ReqData, Context) ->
-    {[{"application/json", to_json}], ReqData, Context}. 
 
 %% TODO, validate request?
 malformed_request(ReqData, Context) ->
@@ -93,9 +88,6 @@ accept_json(ReqData, Context) ->
 			Result = erlang:apply(Module, Function, [wrq:req_body(ReqData)]),
 			{true, wrq:set_resp_body(Result, ReqData), Context}
 	end.
-
-to_json(ReqData, Context) ->
-  {"{}", ReqData, Context}.
 
 %% Internal
 
