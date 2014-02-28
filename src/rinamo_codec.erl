@@ -116,21 +116,22 @@ decode_list_tables(Request) ->
 decode_describe_table(Request) ->
     ok.
 
-decode_create_table(Request) ->
-    TableName = kvc:path("TableName", Request),
-    AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Request), []),
-    KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Request), []),
+decode_create_table(Json) ->
+    TableName = binary:bin_to_list(kvc:path("TableName", Json)),
+    AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Json), []),
+    KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Json), []),
+    SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Json), []),
 
-    SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Request), []),
-    ProvisionedThroughput = [{"ReadCapacityUnits", kvc:path("ProvisionedThroughput.ReadCapacityUnits", Request)},
-                             {"WriteCapacityUnits", kvc:path("ProvisionedThroughput.WriteCapacityUnits", Request)}],
+    % Integers
+    ProvisionedThroughput = [{"ReadCapacityUnits", kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
+                             {"WriteCapacityUnits", kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
 
     [{"TableName", TableName},
      {"Fields", AttributeDefinitions},
      {"KeySchema", KeySchema},
      {"LocalSecondaryIndexes", SecondaryIndexes},
      {"ProvisionedThroughput", ProvisionedThroughput},
-     {"RawSchema", Request}].
+     {"RawSchema", Json}].
 
 encode_create_table_response(Response) ->
     % RawSchema = proplists:get_value("RawSchema", Response),
@@ -561,8 +562,8 @@ decode_create_table_test() ->
             }
         ],
         \"ProvisionedThroughput\": {
-            \"ReadCapacityUnits\": \"number\",
-            \"WriteCapacityUnits\": \"number\"
+            \"ReadCapacityUnits\": 20,
+            \"WriteCapacityUnits\": 5
         },
         \"TableName\": \"table_name\"
     }",
@@ -576,8 +577,8 @@ decode_create_table_test() ->
                                              {"Projection", [{"NonKeyAttributes", ["attr_name"]},
                                                              {"ProjectionType", "projection_type"}]}]
                                         }]]},
-                {"ProvisionedThroughput", [{"ReadCapacityUnits", "number"},
-                                           {"WriteCapacityUnits", "number"}]},
+                {"ProvisionedThroughput", [{"ReadCapacityUnits", 20},
+                                           {"WriteCapacityUnits", 5}]},
                 {"RawSchema", mochijson2:decode(Json)}
                 ],
     ?assertEqual(Expected, Actual).
