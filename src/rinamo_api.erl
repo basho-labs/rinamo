@@ -7,8 +7,8 @@
 -endif.
 
 create_table(DynamoRequest) ->
-  [{_, Table}, {_, Fields}, {_, KeySchema}, {_, L2I},
-   {_, ProvisionedThroughput}, {_, RawSchema}] = rinamo_codec:decode_create_table(mochijson2:decode(DynamoRequest)),
+  [ Table, Fields, KeySchema, L2I,
+    ProvisionedThroughput, RawSchema ] = rinamo_codec:decode_create_table(mochijson2:decode(DynamoRequest)),
    
   Response = rinamo_rj:create_table(Table, Fields, KeySchema, L2I, ProvisionedThroughput, RawSchema),
   rinamo_codec:encode_create_table_response(Response).

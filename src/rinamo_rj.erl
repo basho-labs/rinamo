@@ -14,18 +14,14 @@ create_table(Table, Fields, KeySchema, L2I, ProvisionedThroughput, RawSchema) ->
   %%       rj_yz:store_schema(BucketName, SolrSchema).
   %%   : option 2, TBD
 
-  % io:format(Table),
-  % io:format(mochijson2:encode(Fields)),
-  % io:format(mochijson2:encode(KeySchema)),
-  % io:format(mochijson2:encode(L2I)),
-  % io:format(mochijson2:encode(ProvisionedThroughput)),
+  {_, TableName} = Table,
+  io:format("~s~n", [mochijson2:encode(TableName)]),
 
   ok.
 
 get_item({TableName, SolrQuery}) ->
   ok.
     
-
 put_item({TableName, Item}) ->
   ok.
 
@@ -45,6 +41,12 @@ create_table_test() ->
                                    }]]},
            {"ProvisionedThroughput", [{"ReadCapacityUnits", 10},
                                       {"WriteCapacityUnits", 2}]}
-          ].
+          ],
+[ Table, Fields, KeySchema, L2I,
+    ProvisionedThroughput ] = Input,
+
+Actual = rinamo_rj:create_table(Table, Fields, KeySchema, L2I, ProvisionedThroughput, '{"raw":"schema"}'),
+Expected = ok,
+?assertEqual(Expected, Actual).
 
 -endif.
