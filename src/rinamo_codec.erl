@@ -117,85 +117,24 @@ decode_describe_table(Request) ->
     ok.
 
 decode_create_table(Json) ->
-    TableName = binary:bin_to_list(kvc:path("TableName", Json)),
+    TableName = kvc:path("TableName", Json),
     AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Json), []),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Json), []),
     SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Json), []),
 
     % Integers
-    ProvisionedThroughput = [{"ReadCapacityUnits", kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
-                             {"WriteCapacityUnits", kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
+    ProvisionedThroughput = [{read_capacity_units, kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
+                             {write_capacity_units, kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
 
-    [{"TableName", TableName},
-     {"Fields", AttributeDefinitions},
-     {"KeySchema", KeySchema},
-     {"LocalSecondaryIndexes", SecondaryIndexes},
-     {"ProvisionedThroughput", ProvisionedThroughput},
-     {"RawSchema", Json}].
+    [{tablename, TableName},
+     {fields, AttributeDefinitions},
+     {key_schema, KeySchema},
+     {lsi, SecondaryIndexes},
+     {provisioned_throughput, ProvisionedThroughput},
+     {raw_schema, Json}].
 
 encode_create_table_response(Response) ->
-    % RawSchema = proplists:get_value("RawSchema", Response),
-
-    Data = {struct,
-        [{<<"TableDescription">>,
-          {struct,
-              [{<<"AttributeDefinitions">>,
-                [{struct,
-                     [{<<"AttributeName">>,<<"string">>},
-                      {<<"AttributeType">>,<<"string">>}]}]},
-               {<<"CreationDateTime">>,<<"number">>},
-               {<<"GlobalSecondaryIndexes">>,
-                [{struct,
-                     [{<<"IndexName">>,<<"string">>},
-                      {<<"IndexSizeBytes">>,<<"number">>},
-                      {<<"IndexStatus">>,<<"string">>},
-                      {<<"ItemCount">>,<<"number">>},
-                      {<<"KeySchema">>,
-                       [{struct,
-                            [{<<"AttributeName">>,<<"string">>},
-                             {<<"KeyType">>,<<"string">>}]}]},
-                      {<<"Projection">>,
-                       {struct,
-                           [{<<"NonKeyAttributes">>,[<<"string">>]},
-                            {<<"ProjectionType">>,<<"string">>}]}},
-                      {<<"ProvisionedThroughput">>,
-                       {struct,
-                           [{<<"LastDecreaseDateTime">>,<<"number">>},
-                            {<<"LastIncreaseDateTime">>,<<"number">>},
-                            {<<"NumberOfDecreasesToday">>,<<"number">>},
-                            {<<"ReadCapacityUnits">>,<<"number">>},
-                            {<<"WriteCapacityUnits">>,<<"number">>}]}}]}]},
-               {<<"ItemCount">>,<<"number">>},
-               {<<"KeySchema">>,
-                [{struct,
-                     [{<<"AttributeName">>,<<"string">>},
-                      {<<"KeyType">>,<<"string">>}]}]},
-               {<<"LocalSecondaryIndexes">>,
-                [{struct,
-                     [{<<"IndexName">>,<<"string">>},
-                      {<<"IndexSizeBytes">>,<<"number">>},
-                      {<<"ItemCount">>,<<"number">>},
-                      {<<"KeySchema">>,
-                       [{struct,
-                            [{<<"AttributeName">>,<<"string">>},
-                             {<<"KeyType">>,<<"string">>}]}]},
-                      {<<"Projection">>,
-                       {struct,
-                           [{<<"NonKeyAttributes">>,[<<"string">>]},
-                            {<<"ProjectionType">>,<<"string">>}]}}]}]},
-               {<<"ProvisionedThroughput">>,
-                {struct,
-                    [{<<"LastDecreaseDateTime">>,<<"number">>},
-                     {<<"LastIncreaseDateTime">>,<<"number">>},
-                     {<<"NumberOfDecreasesToday">>,<<"number">>},
-                     {<<"ReadCapacityUnits">>,<<"number">>},
-                     {<<"WriteCapacityUnits">>,<<"number">>}]}},
-               {<<"TableName">>,<<"string">>},
-               {<<"TableSizeBytes">>,<<"number">>},
-               {<<"TableStatus">>,<<"string">>}]}}]},
-                   
-    mochijson2:encode(Data).
-
+    jsx:encode(Response).
 
 decode_update_table(Request) ->
     ok.
@@ -309,22 +248,23 @@ decode_put_item([{FieldName, {struct, [{FieldType, FieldValue}]}}|Rest], Acc) ->
 
 
 decode_table_attributes([], Acc) ->
-    lists:reverse(Acc);
-decode_table_attributes([{struct, Attribute}|Rest], Acc) ->
-    decode_table_attributes(Rest, [{binary:bin_to_list(kvc:path("AttributeName", Attribute)),
-                                    binary:bin_to_list(kvc:path("AttributeType", Attribute))}|Acc]).
+    Acc;
+decode_table_attributes([Attribute|Rest], Acc) ->
+    decode_table_attributes(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
+                                   {<<"AttributeType">>, kvc:path("AttributeType", Attribute)} | Acc]).
+
 
 decode_2i([], Acc) ->
     lists:reverse(Acc);
 decode_2i([Index|Rest], Acc) ->
-    IndexName = binary:bin_to_list(kvc:path("IndexName", Index)),
+    IndexName = kvc:path("IndexName", Index),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Index), []),
-    Projection = [{"NonKeyAttributes", lists:map(fun(X) -> binary:bin_to_list(X) end, kvc:path("Projection.NonKeyAttributes", Index))},
-                  {"ProjectionType", binary:bin_to_list(kvc:path("Projection.ProjectionType", Index))}],
+    Projection = [{non_key_attributes, lists:map(fun(X) -> X end, kvc:path("Projection.NonKeyAttributes", Index))},
+                  {projection_type, kvc:path("Projection.ProjectionType", Index)}],
 
     IndexResult = [{IndexName,
-             [{"KeySchema", KeySchema},
-              {"Projection", Projection}]}],
+             [{key_schema, KeySchema},
+              {projection, Projection}]}],
 
     decode_2i(Rest, [IndexResult|Acc]).
 
@@ -332,8 +272,8 @@ decode_2i([Index|Rest], Acc) ->
 decode_2i_key_schema([], Acc) ->
     lists:reverse(Acc);
 decode_2i_key_schema([Attribute|Rest], Acc) ->
-    decode_2i_key_schema(Rest, [{binary:bin_to_list(kvc:path("AttributeName", Attribute)), 
-                                 binary:bin_to_list(kvc:path("KeyType", Attribute))}|Acc]).
+    decode_2i_key_schema(Rest, [{kvc:path("AttributeName", Attribute), 
+                                 kvc:path("KeyType", Attribute)}|Acc]).
 
 
 decode_key_conditions([], Acc) ->
@@ -531,7 +471,7 @@ decode_describe_table_test() ->
     ?assertEqual(Expected, Actual).
 
 decode_create_table_test() ->
-    Json = "{
+    Json_Bin = <<"{
         \"AttributeDefinitions\": [
             {
                 \"AttributeName\": \"attr_name\",
@@ -566,83 +506,34 @@ decode_create_table_test() ->
             \"WriteCapacityUnits\": 5
         },
         \"TableName\": \"table_name\"
-    }",
-    Actual = decode_create_table(mochijson2:decode(Json)),
+    }">>,
+    Actual = decode_create_table(jsx:decode(Json_Bin)),
     io:format("Actual: ~p~n", [Actual]),
-    Expected = [{"TableName", "table_name"},
-                {"Fields", [{"attr_name", "attr_type"}]},
-                {"KeySchema", [{"attr_name", "key_type"}]},
-                {"LocalSecondaryIndexes", [[{"2i_name", 
-                                            [{"KeySchema", [{"attr_name", "key_type"}]},
-                                             {"Projection", [{"NonKeyAttributes", ["attr_name"]},
-                                                             {"ProjectionType", "projection_type"}]}]
-                                        }]]},
-                {"ProvisionedThroughput", [{"ReadCapacityUnits", 20},
-                                           {"WriteCapacityUnits", 5}]},
-                {"RawSchema", mochijson2:decode(Json)}
+    Expected = [{tablename, <<"table_name">>},
+                {fields, [
+                  {<<"AttributeName">>, <<"attr_name">>}, {<<"AttributeType">>, <<"attr_type">>}
+                ]},
+                {key_schema, [{<<"attr_name">>, <<"key_type">>}]},
+                {lsi, [[{<<"2i_name">>, 
+                        [{key_schema, [{<<"attr_name">>,
+                                        <<"key_type">>}]},
+                         {projection, [{non_key_attributes, [<<"attr_name">>]},
+                                       {projection_type, <<"projection_type">>}]}]
+                }]]},
+                {provisioned_throughput, [{read_capacity_units, 20},
+                                           {write_capacity_units, 5}]},
+                {raw_schema, jsx:decode(Json_Bin)}
                 ],
     ?assertEqual(Expected, Actual).
 
 encode_create_table_response_test() ->
-    Data = {struct,
-        [{<<"TableDescription">>,
-          {struct,
-              [{<<"AttributeDefinitions">>,
-                [{struct,
-                     [{<<"AttributeName">>,<<"string">>},
-                      {<<"AttributeType">>,<<"string">>}]}]},
-               {<<"CreationDateTime">>,<<"number">>},
-               {<<"GlobalSecondaryIndexes">>,
-                [{struct,
-                     [{<<"IndexName">>,<<"string">>},
-                      {<<"IndexSizeBytes">>,<<"number">>},
-                      {<<"IndexStatus">>,<<"string">>},
-                      {<<"ItemCount">>,<<"number">>},
-                      {<<"KeySchema">>,
-                       [{struct,
-                            [{<<"AttributeName">>,<<"string">>},
-                             {<<"KeyType">>,<<"string">>}]}]},
-                      {<<"Projection">>,
-                       {struct,
-                           [{<<"NonKeyAttributes">>,[<<"string">>]},
-                            {<<"ProjectionType">>,<<"string">>}]}},
-                      {<<"ProvisionedThroughput">>,
-                       {struct,
-                           [{<<"LastDecreaseDateTime">>,<<"number">>},
-                            {<<"LastIncreaseDateTime">>,<<"number">>},
-                            {<<"NumberOfDecreasesToday">>,<<"number">>},
-                            {<<"ReadCapacityUnits">>,<<"number">>},
-                            {<<"WriteCapacityUnits">>,<<"number">>}]}}]}]},
-               {<<"ItemCount">>,<<"number">>},
-               {<<"KeySchema">>,
-                [{struct,
-                     [{<<"AttributeName">>,<<"string">>},
-                      {<<"KeyType">>,<<"string">>}]}]},
-               {<<"LocalSecondaryIndexes">>,
-                [{struct,
-                     [{<<"IndexName">>,<<"string">>},
-                      {<<"IndexSizeBytes">>,<<"number">>},
-                      {<<"ItemCount">>,<<"number">>},
-                      {<<"KeySchema">>,
-                       [{struct,
-                            [{<<"AttributeName">>,<<"string">>},
-                             {<<"KeyType">>,<<"string">>}]}]},
-                      {<<"Projection">>,
-                       {struct,
-                           [{<<"NonKeyAttributes">>,[<<"string">>]},
-                            {<<"ProjectionType">>,<<"string">>}]}}]}]},
-               {<<"ProvisionedThroughput">>,
-                {struct,
-                    [{<<"LastDecreaseDateTime">>,<<"number">>},
-                     {<<"LastIncreaseDateTime">>,<<"number">>},
-                     {<<"NumberOfDecreasesToday">>,<<"number">>},
-                     {<<"ReadCapacityUnits">>,<<"number">>},
-                     {<<"WriteCapacityUnits">>,<<"number">>}]}},
-               {<<"TableName">>,<<"string">>},
-               {<<"TableSizeBytes">>,<<"number">>},
-               {<<"TableStatus">>,<<"string">>}]}}]},
-    Expected = mochijson2:encode(Data),
-    Actual = encode_create_table_response(undefined),
+    Response = [{ <<"TableDescription">>, [
+      {<<"TableName">>, <<"TestTableName">>},
+      {<<"CreationTime">>, 1393894414.657089}
+    ]}],
+    Actual = encode_create_table_response(Response),
+    io:format("Actual: ~p~n", [Actual]),
+    Expected = <<"{\"TableDescription\":{\"TableName\":\"TestTableName\",\"CreationTime\":1393894414.657089}}">>,
     ?assertEqual(Expected, Actual).
 
 decode_update_table_test() ->

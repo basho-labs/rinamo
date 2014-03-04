@@ -7,10 +7,26 @@
 -endif.
 
 create_table(DynamoRequest) ->
-  [ Table, Fields, KeySchema, L2I,
-    ProvisionedThroughput, RawSchema ] = rinamo_codec:decode_create_table(mochijson2:decode(DynamoRequest)),
+  % Parse Request
+  RequestTerms = jsx:decode(DynamoRequest),
+  [ {_, Table}, {_, Fields}, {_, KeySchema}, {_, LSI},
+    {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(RequestTerms),
    
-  Response = rinamo_rj:create_table(Table, Fields, KeySchema, L2I, ProvisionedThroughput, RawSchema),
+  % Creation Time
+  {MegaSecs, Secs, MicroSecs} = now(),
+  CreationTime = (MegaSecs * 1000000 + Secs) + MicroSecs / 1000000,
+
+  % Put things into Riak
+  _ = rinamo_rj:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema),
+
+  % Enrich Response as needed
+  Response = [{ <<"TableDescription">>, [
+    {<<"TableName">>, Table},
+    {<<"CreationTime">>, CreationTime},
+    {<<"AttributeDefinitions">>, [Fields]}
+  ]}],
+
+  % JSONify the Response
   rinamo_codec:encode_create_table_response(Response).
 
 put_item(DynamoRequest) ->
@@ -29,4 +45,10 @@ query(DynamoRequest) ->
   rinamo_codec:encode_query_response(Response).
 
 -ifdef(TEST).
+
+create_table_test() ->
+  Input = <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>,  
+  Response = rinamo_api:create_table(Input),
+  io:format("Actual: ~p", [Response]).
+
 -endif.
