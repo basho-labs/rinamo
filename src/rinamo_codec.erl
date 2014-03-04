@@ -121,8 +121,6 @@ decode_create_table(Json) ->
     AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Json), []),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Json), []),
     SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Json), []),
-
-    % Integers
     ProvisionedThroughput = [{read_capacity_units, kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
                              {write_capacity_units, kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
 
