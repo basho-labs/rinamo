@@ -21,9 +21,14 @@ create_table(DynamoRequest) ->
   % Enrich Response as needed
   Response = [{ <<"TableDescription">>, [
     {<<"TableName">>, Table},
-    {<<"CreationTime">>, CreationTime},
     {<<"AttributeDefinitions">>, [Fields]},
-    {<<"KeySchema">>, [KeySchema]}
+    {<<"KeySchema">>, [KeySchema]},
+    {<<"ProvisionedThroughput">>, ProvisionedThroughput},
+    {<<"LocalSecondaryIndexes">>, [{}]},
+    {<<"GlobalSecondaryIndexes">>, [{}]},
+    {<<"TableSizeBytes">>, 0},
+    {<<"TableStatus">>, <<"'CREATING'">>},
+    {<<"CreationDateTime">>, CreationTime}
   ]}],
 
   % JSONify the Response
