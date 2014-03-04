@@ -27,7 +27,7 @@ create_table(DynamoRequest) ->
     {<<"LocalSecondaryIndexes">>, [{}]},
     {<<"GlobalSecondaryIndexes">>, [{}]},
     {<<"TableSizeBytes">>, 0},
-    {<<"TableStatus">>, <<"'CREATING'">>},
+    {<<"TableStatus">>, <<"CREATING">>},
     {<<"CreationDateTime">>, CreationTime}
   ]}],
 
