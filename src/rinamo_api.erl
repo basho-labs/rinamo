@@ -8,9 +8,8 @@
 
 create_table(DynamoRequest) ->
   % Parse Request
-  RequestTerms = jsx:decode(DynamoRequest),
   [ {_, Table}, {_, Fields}, {_, KeySchema}, {_, LSI},
-    {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(RequestTerms),
+    {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
    
   % Creation Time
   {MegaSecs, Secs, MicroSecs} = now(),
@@ -48,7 +47,7 @@ query(DynamoRequest) ->
 
 create_table_test() ->
   Input = <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>,  
-  Response = rinamo_api:create_table(Input),
+  Response = rinamo_api:create_table(jsx:decode(Input)),
   io:format("Actual: ~p", [Response]).
 
 -endif.

@@ -85,7 +85,7 @@ accept_json(ReqData, Context) ->
 	case Operation of
 		{error, unimplemented} -> {{halt, 501}, ReqData, Context};
 		{Module, Function} -> 
-			Result = erlang:apply(Module, Function, [wrq:req_body(ReqData)]),
+			Result = erlang:apply(Module, Function, [jsx:decode(wrq:req_body(ReqData))]),
 			{true, wrq:set_resp_body(Result, ReqData), Context}
 	end.
 
