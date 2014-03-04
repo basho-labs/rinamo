@@ -54,6 +54,27 @@ query(DynamoRequest) ->
 create_table_test() ->
   Input = <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>,  
   Response = rinamo_api:create_table(jsx:decode(Input)),
-  io:format("Actual: ~p", [Response]).
+  Actual = jsx:decode(Response),
+  io:format("Actual: ~p", [Actual]),
+  [{_, [{_,TableName}, {_, AttributeDefinitions}, {_, KeySchema},
+     {_, ProvisionedThroughput}, {_, LSI}, {_, GSI},
+     {_, TableSize}, {_, TableStatus}, {_, CreationDateTime}]}] = Actual,
+  ?assertEqual(<<"ProductCatalog">>, TableName),
+  ?assertEqual([[
+    {<<"AttributeName">>,<<"Id">>},
+    {<<"AttributeType">>,<<"N">>}
+  ]], AttributeDefinitions),
+  ?assertEqual([[
+    {<<"AttributeName">>,<<"Id">>},
+    {<<"KeyType">>,<<"HASH">>}
+  ]], KeySchema),
+  ?assertEqual([
+    {<<"ReadCapacityUnits">>,10},
+    {<<"WriteCapacityUnits">>,5}
+  ], ProvisionedThroughput),
+  ?assertEqual([{}], LSI),
+  ?assertEqual([{}], GSI),
+  ?assertEqual(0, TableSize),
+  ?assert(CreationDateTime > 0).
 
 -endif.

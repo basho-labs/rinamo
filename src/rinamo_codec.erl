@@ -121,8 +121,8 @@ decode_create_table(Json) ->
     AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Json), []),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Json), []),
     SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Json), []),
-    ProvisionedThroughput = [{read_capacity_units, kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
-                             {write_capacity_units, kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
+    ProvisionedThroughput = [{<<"ReadCapacityUnits">>, kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
+                             {<<"WriteCapacityUnits">>, kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
 
     [{tablename, TableName},
      {fields, AttributeDefinitions},
@@ -521,8 +521,8 @@ decode_create_table_test() ->
                         {projection, [{non_key_attributes, [<<"attr_name">>]},
                                       {projection_type, <<"projection_type">>}]}]
                 }]]},
-                {provisioned_throughput, [{read_capacity_units, 20},
-                                          {write_capacity_units, 5}]},
+                {provisioned_throughput, [{<<"ReadCapacityUnits">>, 20},
+                                          {<<"WriteCapacityUnits">>, 5}]},
                 {raw_schema, jsx:decode(Json_Bin)}
                 ],
     ?assertEqual(Expected, Actual).
