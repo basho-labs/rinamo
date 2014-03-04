@@ -22,7 +22,8 @@ create_table(DynamoRequest) ->
   Response = [{ <<"TableDescription">>, [
     {<<"TableName">>, Table},
     {<<"CreationTime">>, CreationTime},
-    {<<"AttributeDefinitions">>, [Fields]}
+    {<<"AttributeDefinitions">>, [Fields]},
+    {<<"KeySchema">>, [KeySchema]}
   ]}],
 
   % JSONify the Response

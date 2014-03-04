@@ -268,10 +268,10 @@ decode_2i([Index|Rest], Acc) ->
 
 
 decode_2i_key_schema([], Acc) ->
-    lists:reverse(Acc);
+    Acc;
 decode_2i_key_schema([Attribute|Rest], Acc) ->
-    decode_2i_key_schema(Rest, [{kvc:path("AttributeName", Attribute), 
-                                 kvc:path("KeyType", Attribute)}|Acc]).
+    decode_2i_key_schema(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)}, 
+                                {<<"KeyType">>, kvc:path("KeyType", Attribute)} | Acc]).
 
 
 decode_key_conditions([], Acc) ->
@@ -511,15 +511,18 @@ decode_create_table_test() ->
                 {fields, [
                   {<<"AttributeName">>, <<"attr_name">>}, {<<"AttributeType">>, <<"attr_type">>}
                 ]},
-                {key_schema, [{<<"attr_name">>, <<"key_type">>}]},
+                {key_schema, [
+                  {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
+                ]},
                 {lsi, [[{<<"2i_name">>, 
-                        [{key_schema, [{<<"attr_name">>,
-                                        <<"key_type">>}]},
-                         {projection, [{non_key_attributes, [<<"attr_name">>]},
-                                       {projection_type, <<"projection_type">>}]}]
+                        [{key_schema, [
+                          {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
+                        ]},
+                        {projection, [{non_key_attributes, [<<"attr_name">>]},
+                                      {projection_type, <<"projection_type">>}]}]
                 }]]},
                 {provisioned_throughput, [{read_capacity_units, 20},
-                                           {write_capacity_units, 5}]},
+                                          {write_capacity_units, 5}]},
                 {raw_schema, jsx:decode(Json_Bin)}
                 ],
     ?assertEqual(Expected, Actual).
