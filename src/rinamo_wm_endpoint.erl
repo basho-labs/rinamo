@@ -63,8 +63,12 @@ create_path(ReqData, Context) ->
 %% Non-webmachine
 
 accept_json(ReqData, Context) ->
+	AuthorizationHeader = wrq:get_req_header("Authorization", ReqData),
+	UserKey = dynamo_user(AuthorizationHeader),
 	Target = list_to_binary(wrq:get_req_header("X-Amz-Target", ReqData)),
 	{Op, _ApiVersion} = dynamo_op(Target),
+	lager:debug("UserKey: ~p~n", [UserKey]),
+	lager:debug("Op: ~p~n", [Op]),
 	Operation = case Op of
 		"CreateTable" -> {rinamo_api, create_table};
 		"UpdateTable" -> {error, unimplemented};
@@ -91,6 +95,13 @@ accept_json(ReqData, Context) ->
 
 %% Internal
 
+dynamo_user(AuthorizationHeader) ->
+	[_, Credentials, _, _] = string:tokens(AuthorizationHeader, " "),
+	StartCharPos = string:str(Credentials, "="),
+	EndCharPos = string:str(Credentials, "/"),
+	UserKey = string:substr(Credentials, StartCharPos + 1, EndCharPos - (StartCharPos + 1)),
+	list_to_binary(UserKey).
+
 dynamo_op(TargetHeader) ->
 	Header = binary:bin_to_list(TargetHeader),
 	case string:chr(Header, $.) of
@@ -99,6 +110,12 @@ dynamo_op(TargetHeader) ->
 	end.
 
 -ifdef(TEST).
+
+dynamo_user_test() ->
+	Input = "AWS4-HMAC-SHA256 Credential=RANDY_ACCESS_KEY/20140224/us-east-1/dynamodb/aws4_request, SignedHeaders=content-length;content-type;host;user-agent;x-amz-date;x-amz-target, Signature=81f71d83f35b3b2be9589f9ec0f5edca95b14d602f639b183e729d1fd1e3308c",
+	Actual = dynamo_user(Input),
+	Expected = <<"RANDY_ACCESS_KEY">>,
+	?assertEqual(Expected, Actual).
 
 dynamo_op_test() ->
 	TargetHeader = <<"DynamoDB_20120810.ListTables">>,
