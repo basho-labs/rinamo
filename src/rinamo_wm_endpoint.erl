@@ -14,8 +14,7 @@
     ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
-
--record(ctx, {table_name}).
+-include_lib("rinamo/include/rinamo.hrl").
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -24,7 +23,7 @@
 init(_) ->
 	{ok, #ctx{}}.
 
-service_available(ReqData, Context) ->
+service_available(ReqData, Context=#ctx{}) ->
 	{
 		rinamo_config:is_enabled(),
 		ReqData,
@@ -63,12 +62,10 @@ create_path(ReqData, Context) ->
 %% Non-webmachine
 
 accept_json(ReqData, Context) ->
-	AuthorizationHeader = wrq:get_req_header("Authorization", ReqData),
-	UserKey = dynamo_user(AuthorizationHeader),
-	Target = list_to_binary(wrq:get_req_header("X-Amz-Target", ReqData)),
-	{Op, _ApiVersion} = dynamo_op(Target),
-	lager:debug("UserKey: ~p~n", [UserKey]),
-	lager:debug("Op: ~p~n", [Op]),
+	AWSContext = Context#ctx {
+		user_key = dynamo_user(wrq:get_req_header("Authorization", ReqData))
+	},
+	{Op, _ApiVersion} = dynamo_op(wrq:get_req_header("X-Amz-Target", ReqData)),
 	Operation = case Op of
 		"CreateTable" -> {rinamo_api, create_table};
 		"UpdateTable" -> {error, unimplemented};
@@ -86,11 +83,14 @@ accept_json(ReqData, Context) ->
 		_ -> {error, unimplemented}
 	end,
 
+	lager:debug("accept_json: ~p~n", [AWSContext]),
+	lager:debug("Op: ~p~n", [Op]),
+
 	case Operation of
-		{error, unimplemented} -> {{halt, 501}, ReqData, Context};
+		{error, unimplemented} -> {{halt, 501}, ReqData, AWSContext};
 		{Module, Function} -> 
-			Result = erlang:apply(Module, Function, [jsx:decode(wrq:req_body(ReqData))]),
-			{true, wrq:set_resp_body(Result, ReqData), Context}
+			Result = erlang:apply(Module, Function, [jsx:decode(wrq:req_body(ReqData)), AWSContext]),
+			{true, wrq:set_resp_body(Result, ReqData), AWSContext}
 	end.
 
 %% Internal
@@ -103,10 +103,9 @@ dynamo_user(AuthorizationHeader) ->
 	list_to_binary(UserKey).
 
 dynamo_op(TargetHeader) ->
-	Header = binary:bin_to_list(TargetHeader),
-	case string:chr(Header, $.) of
-		0 -> {Header, undefined};
-		Pos -> {string:substr(Header, Pos+1), string:substr(Header, 1, Pos-1)}
+	case string:chr(TargetHeader, $.) of
+		0 -> {TargetHeader, undefined};
+		Pos -> {string:substr(TargetHeader, Pos+1), string:substr(TargetHeader, 1, Pos-1)}
 	end.
 
 -ifdef(TEST).
@@ -118,7 +117,7 @@ dynamo_user_test() ->
 	?assertEqual(Expected, Actual).
 
 dynamo_op_test() ->
-	TargetHeader = <<"DynamoDB_20120810.ListTables">>,
+	TargetHeader = "DynamoDB_20120810.ListTables",
 	Actual = dynamo_op(TargetHeader),
 	Expected = {"ListTables", "DynamoDB_20120810"},
 	?assertEqual(Expected, Actual).
