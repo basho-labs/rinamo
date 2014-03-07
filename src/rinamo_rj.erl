@@ -1,6 +1,6 @@
 -module(rinamo_rj).
 
--export([create_table/7, list_tables/1]).
+-export([create_table/7, list_tables/1, load_table_def/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -17,7 +17,7 @@ create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AW
 
   B = UserKey,
   List_K = <<"TableList">>,
-  Table_K = erlang:iolist_to_binary([Table]),
+  Table_K = Table,
   Table_V = jsx:encode(RawSchema),
 
   {_, List} = yz_kv:get(
@@ -26,7 +26,7 @@ create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AW
 
   List_V = case List of
     notfound -> jsx:encode([Table]);
-    _ -> update_list(jsx:decode(List), Table)
+    _ -> update_table_list(jsx:decode(List), Table)
   end,
 
   % update table list
@@ -60,18 +60,24 @@ list_tables(AWSContext) ->
     _ -> jsx:decode(List)
   end.
 
-get_item({TableName, SolrQuery}) ->
-  ok.
-    
-put_item({TableName, Item}) ->
-  ok.
+load_table_def(Table, AWSContext) ->
+  UserKey = AWSContext#ctx.user_key,
 
-query({TableName, Query}) ->
-  ok.
+  B = UserKey,
+  Table_K = Table,
+
+  {_, Table_V} = yz_kv:get(
+    yz_kv:client(), B, Table_K
+  ),
+
+  case Table_V of
+    notfound -> notfound;
+    _ -> jsx:decode(Table_V)
+  end.
 
 %% Internal
 
-update_list(TableList, Table) ->
+update_table_list(TableList, Table) ->
   jsx:encode(lists:usort(lists:append(TableList, [Table]))).
 
 -ifdef(TEST).

@@ -1,9 +1,7 @@
 -module(rinamo_codec).
 
--export([decode_get_item/1, encode_get_item_response/1,
-         decode_put_item/1, encode_put_item_response/1,
-         decode_create_table/1, encode_create_table_response/1,
-         decode_query/1, encode_query_response/1]).
+-export([decode_create_table/1, encode_create_table_response/1,
+         decode_describe_table/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -110,11 +108,9 @@ decode_update_item(Request) ->
 decode_delete_item(Request) ->
     ok.
 
-decode_list_tables(Request) ->
-    ok.
-
-decode_describe_table(Request) ->
-    ok.
+decode_describe_table(Json) ->
+    TableName = kvc:path("TableName", Json),
+    [{tablename, TableName}].
 
 decode_create_table(Json) ->
     TableName = kvc:path("TableName", Json),
@@ -458,14 +454,11 @@ decode_delete_item_test() ->
     Expected = ok,
     ?assertEqual(Expected, Actual).
 
-decode_list_tables_test() ->
-    Actual = decode_list_tables([]),
-    Expected = ok,
-    ?assertEqual(Expected, Actual).
-
 decode_describe_table_test() ->
-    Actual = decode_describe_table([]),
-    Expected = ok,
+    Json_Bin = <<"{\"TableName\": \"table_name\"}">>,
+    Actual = decode_describe_table(jsx:decode(Json_Bin)),
+    io:format("Actual: ~p~n", [Actual]),
+    Expected = [{tablename, <<"table_name">>}],
     ?assertEqual(Expected, Actual).
 
 decode_create_table_test() ->
