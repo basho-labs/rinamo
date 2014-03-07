@@ -15,21 +15,35 @@ create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AW
 
   UserKey = AWSContext#ctx.user_key,
 
-  Bucket = erlang:iolist_to_binary([UserKey, <<"--">>, Table]),
-  Key = <<"Randy_Key">>,
-  Value = jsx:encode(RawSchema),
+  B = UserKey,
+  List_K = <<"TableList">>,
+  Table_K = erlang:iolist_to_binary([Table]),
+  Table_V = jsx:encode(RawSchema),
 
-  Result = yz_kv:put(
+  {_, List} = yz_kv:get(
+    yz_kv:client(), B, List_K
+  ),
+
+  List_V = case List of
+    notfound -> jsx:encode([Table]);
+    _ -> update_list(jsx:decode(List), Table)
+  end,
+
+  % update table list
+  R0 = yz_kv:put(
     yz_kv:client(),
-    Bucket,
-    Key,
-    Value,
+    B, List_K, List_V,
     "application/json"),
 
-  % TODO:  Handle failure: {error,all_nodes_down} vs ok.
-  lager:debug("Result: ~p~n", [Result]),
+  % save off table def
+  R1 = yz_kv:put(
+    yz_kv:client(),
+    B, Table_K, Table_V,
+    "application/json"),
 
-  Result.
+  lager:debug("Result: [~p, ~p]~n", [R0, R1]),
+
+  {R0, R1}.
 
 get_item({TableName, SolrQuery}) ->
   ok.
@@ -40,11 +54,17 @@ put_item({TableName, Item}) ->
 query({TableName, Query}) ->
   ok.
 
+%% Internal
+
+update_list(TableList, Table) ->
+  jsx:encode(lists:usort(lists:append(TableList, [Table]))).
+
 -ifdef(TEST).
 
 create_table_test() ->
   meck:new(yz_kv, [non_strict]),
   meck:expect(yz_kv, client, fun() -> ok end),
+  meck:expect(yz_kv, get, fun(_, _, _) -> {value, <<"[\"one\",\"two\",\"three\"]">>} end),
   meck:expect(yz_kv, put, fun(_, _, _, _, _) -> ok end),
 
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
@@ -58,7 +78,7 @@ create_table_test() ->
   ProvisionedThroughput = [{<<"ReadCapacityUnits">>, 10}, {<<"WriteCapacityUnits">>, 2}],
 
   Actual = rinamo_rj:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, '{"raw":"schema"}', AWSContext),
-  Expected = ok,
+  Expected = {ok, ok},
   ?assertEqual(Expected, Actual),
 
   meck:unload(yz_kv).

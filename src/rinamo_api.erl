@@ -18,7 +18,13 @@ create_table(DynamoRequest, AWSContext) ->
   CreationTime = (MegaSecs * 1000000 + Secs) + MicroSecs / 1000000,
 
   % Put things into Riak
-  _ = rinamo_rj:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AWSContext),
+  {LR, TR} = rinamo_rj:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AWSContext),
+
+  % handle DB failures
+  % Response = case DB_Result of
+  %   {error,all_nodes_down} ->
+  %   _ -> % proceed as normal
+  % end,
 
   % Enrich Response as needed
   Response = [{ <<"TableDescription">>, [
@@ -56,6 +62,7 @@ query(DynamoRequest, AWSContext) ->
 create_table_test() ->
   meck:new(yz_kv, [non_strict]),
   meck:expect(yz_kv, client, fun() -> ok end),
+  meck:expect(yz_kv, get, fun(_, _, _) -> {error, notfound} end),
   meck:expect(yz_kv, put, fun(_, _, _, _, _) -> ok end),
 
   Input = <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>,

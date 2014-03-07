@@ -41,7 +41,6 @@ content_types_accepted(ReqData, Context) ->
 content_types_provided(ReqData, Context) ->
     {[{"application/json", to_json}], ReqData, Context}.
 
-%% TODO, validate request?
 malformed_request(ReqData, Context) ->
 	{false, ReqData, Context}.
 
@@ -130,6 +129,7 @@ dynamo_op(TargetHeader) ->
 format_error_message(Message) ->
 	"{\n  \"message\":\"" ++ Message ++ "\"\n  \"documentation_url\":\"http://docs.basho.com\"\n}".
 
+
 -ifdef(TEST).
 
 dynamo_user_test() ->
@@ -146,6 +146,4 @@ dynamo_op_test() ->
 	?assertEqual(Expected, Actual),
 	?assertEqual({undefined, undefined}, dynamo_op(undefined)).
 
-
 -endif.
-
