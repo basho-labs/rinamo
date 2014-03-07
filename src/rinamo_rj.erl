@@ -1,6 +1,6 @@
 -module(rinamo_rj).
 
--export([create_table/7]).
+-export([create_table/7, list_tables/1]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -44,6 +44,21 @@ create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AW
   lager:debug("Result: [~p, ~p]~n", [R0, R1]),
 
   {R0, R1}.
+
+list_tables(AWSContext) ->
+  UserKey = AWSContext#ctx.user_key,
+
+  B = UserKey,
+  List_K = <<"TableList">>,
+
+  {_, List} = yz_kv:get(
+    yz_kv:client(), B, List_K
+  ),
+
+  case List of
+    notfound -> [];
+    _ -> jsx:decode(List)
+  end.
 
 get_item({TableName, SolrQuery}) ->
   ok.

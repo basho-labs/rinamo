@@ -1,6 +1,6 @@
 -module(rinamo_api).
 
--export([create_table/2, put_item/2, get_item/2, query/2]).
+-export([create_table/2, list_tables/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -41,6 +41,11 @@ create_table(DynamoRequest, AWSContext) ->
 
   % JSONify the Response
   rinamo_codec:encode_create_table_response(Response).
+
+list_tables(DynamoRequest, AWSContext) ->
+  Result = rinamo_rj:list_tables(AWSContext),
+  Response = [{ <<"TableNames">>, Result }],
+  jsx:encode(Response).
 
 put_item(DynamoRequest, AWSContext) ->
   Request = rinamo_codec:decode_put_itme(DynamoRequest),
