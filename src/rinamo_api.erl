@@ -56,10 +56,8 @@ describe_table(DynamoRequest, AWSContext) ->
 -ifdef(TEST).
 
 create_table_test() ->
-  meck:new(yz_kv, [non_strict]),
-  meck:expect(yz_kv, client, fun() -> ok end),
-  meck:expect(yz_kv, get, fun(_, _, _) -> {error, notfound} end),
-  meck:expect(yz_kv, put, fun(_, _, _, _, _) -> ok end),
+  meck:new(rinamo_rj, [non_strict, passthrough]),
+  meck:expect(rinamo_rj, create_table, 7, {ok, ok}),
 
   Input = <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
@@ -87,6 +85,6 @@ create_table_test() ->
   ?assertEqual(0, TableSize),
   ?assert(CreationDateTime > 0),
   
-  meck:unload(yz_kv).
+  meck:unload(rinamo_rj).
 
 -endif.
