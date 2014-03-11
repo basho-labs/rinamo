@@ -20,7 +20,7 @@ create_table(DynamoRequest, AWSContext) ->
   CreationTime = (MegaSecs * 1000000 + Secs) + MicroSecs / 1000000,
 
   % Put things into Riak; LR = List Result, TR = Table Result
-  {LR, TR} = rinamo_tables:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AWSContext),
+  {LR, TR} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
 
   % handle KV failures
   % Response = case LR or TR of
@@ -76,7 +76,7 @@ table_fixture() ->
 
 create_table_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
-  meck:expect(rinamo_tables, create_table, 7, {ok, ok}),
+  meck:expect(rinamo_tables, create_table, 3, {ok, ok}),
 
   Input = table_fixture(),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
