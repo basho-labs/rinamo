@@ -76,7 +76,7 @@ accept_json(ReqData, Context) ->
 		"ListTables" -> {rinamo_api, list_tables};
 		"DescribeTable" -> {rinamo_api, describe_table};
 		"GetItem" -> {rinamo_api, get_item};
-		"PutItem" -> {rinamo_api, put_iem};
+		"PutItem" -> {rinamo_api, put_item};
 		"UpdateItem" -> {error, unimplemented};
 		"DeleteItem" -> {error, unimplemented};
 		"Query" -> {rinamo_api, query};

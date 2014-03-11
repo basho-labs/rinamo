@@ -1,6 +1,6 @@
--module(rinamo_rj).
+-module(rinamo_tables).
 
--export([create_table/7, list_tables/1, load_table_def/2]).
+-export([create_table/3, list_tables/1, load_table_def/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -8,10 +8,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, RawSchema, AWSContext) ->
+create_table(Table, RawSchema, AWSContext) ->
   lager:debug("RawSchema: ~p~n", [RawSchema]),
-
-  % rj_yz:store_schema(BucketName, SolrSchema).
 
   UserKey = AWSContext#ctx.user_key,
 
@@ -98,10 +96,38 @@ create_table_test() ->
                                          {<<"ProjectionType">>, <<"projection_type">>}]}]}],
   ProvisionedThroughput = [{<<"ReadCapacityUnits">>, 10}, {<<"WriteCapacityUnits">>, 2}],
 
-  Actual = rinamo_rj:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, '{"raw":"schema"}', AWSContext),
+  Actual = create_table(Table, '{"raw":"schema"}', AWSContext),
   Expected = {ok, ok},
   ?assertEqual(Expected, Actual),
 
   meck:unload(yz_kv).
+
+list_tables_test() ->
+  meck:new(yz_kv, [non_strict]),
+  meck:expect(yz_kv, client, fun() -> ok end),
+  meck:expect(yz_kv, get, fun(_, _, _) -> {value, <<"[\"one\",\"two\",\"three\"]">>} end),
+
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  Actual = list_tables(AWSContext),
+  Expected = [<<"one">>, <<"two">>, <<"three">>],
+  ?assertEqual(Expected, Actual),
+
+  meck:unload(yz_kv).
+
+load_table_def_test() ->
+  meck:new(yz_kv, [non_strict]),
+  meck:expect(yz_kv, client, fun() -> ok end),
+  meck:expect(yz_kv, get, fun(_, _, _) -> {value, <<"[\"Some_Table_Def_JSON_Here\"]">>} end),
+
+  Table = <<"Some_Table">>,
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  Actual = load_table_def(Table, AWSContext),
+  Expected = [<<"Some_Table_Def_JSON_Here">>],
+  ?assertEqual(Expected, Actual),
+
+  meck:unload(yz_kv).
+
 
 -endif.
