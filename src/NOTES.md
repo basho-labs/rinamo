@@ -25,4 +25,4 @@ http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
 - Needs to be connected to riak json
 
 Code Flow, roughly:
-rinamo_wm_endpoint -> rinamo_api -> rinamo_codec -> rinamo_rj -> rinamo_codec -> rinamo_api -> rinamo_wm_endpoint
+rinamo_wm_endpoint -> rinamo_api -> rinamo_codec -> rinamo_tables -> rinamo_codec -> rinamo_api -> rinamo_wm_endpoint

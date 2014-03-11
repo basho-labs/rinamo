@@ -1,5 +1,5 @@
 -record(ctx, {
-	user_key
+	user_key :: binary()
 }).
 
 

@@ -1,4 +1,4 @@
--module(rinamo_rj).
+-module(rinamo_tables).
 
 -export([create_table/7, list_tables/1, load_table_def/2]).
 
@@ -98,7 +98,7 @@ create_table_test() ->
                                          {<<"ProjectionType">>, <<"projection_type">>}]}]}],
   ProvisionedThroughput = [{<<"ReadCapacityUnits">>, 10}, {<<"WriteCapacityUnits">>, 2}],
 
-  Actual = rinamo_rj:create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, '{"raw":"schema"}', AWSContext),
+  Actual = create_table(Table, Fields, KeySchema, LSI, ProvisionedThroughput, '{"raw":"schema"}', AWSContext),
   Expected = {ok, ok},
   ?assertEqual(Expected, Actual),
 
