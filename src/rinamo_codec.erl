@@ -380,24 +380,26 @@ decode_put_item_test() ->
     }">>,
     Actual = decode_put_item(jsx:decode(Json_Bin)),
     Expected = [
-                {expected, [{<<"field1">>, [{<<"Exists">>, true}, {<<"B">>, <<"blob">>}]},
-                              {<<"field2">>, [{<<"Exists">>, false}, {<<"BS">>, [<<"blob">>]}]},
-                              {<<"field3">>, [{<<"Exists">>, true}, {<<"N">>, <<"string">>}]},
-                              {<<"field4">>, [{<<"Exists">>, false}, {<<"NS">>, [<<"string">>]}]},
-                              {<<"field5">>, [{<<"Exists">>, true}, {<<"S">>, <<"string">>}]},
-                              {<<"field6">>, [{<<"Exists">>, false}, {<<"SS">>, [<<"string">>]}]}
-                              ]},
-                {item, [{<<"field1">>, {<<"B">>, <<"blob">>}},
-                          {<<"field2">>, {<<"BS">>, [<<"blob">>]}},
-                          {<<"field3">>, {<<"N">>, <<"string">>}},
-                          {<<"field4">>, {<<"NS">>, [<<"string">>]}},
-                          {<<"field5">>, {<<"S">>, <<"string">>}},
-                          {<<"field6">>, {<<"SS">>, [<<"string">>]}}
-                          ]},
-                {return_consumed_capacity, <<"string">>},
-                {return_item_collection_metrics, <<"string">>},
-                {return_values, <<"string">>},
-                {tablename, <<"table_name">>}],
+        {expected, [
+            {<<"field1">>, [{<<"Exists">>, true}, {<<"B">>, <<"blob">>}]},
+            {<<"field2">>, [{<<"Exists">>, false}, {<<"BS">>, [<<"blob">>]}]},
+            {<<"field3">>, [{<<"Exists">>, true}, {<<"N">>, <<"string">>}]},
+            {<<"field4">>, [{<<"Exists">>, false}, {<<"NS">>, [<<"string">>]}]},
+            {<<"field5">>, [{<<"Exists">>, true}, {<<"S">>, <<"string">>}]},
+            {<<"field6">>, [{<<"Exists">>, false}, {<<"SS">>, [<<"string">>]}]}
+        ]},
+        {item, [
+            {<<"field1">>, {<<"B">>, <<"blob">>}},
+            {<<"field2">>, {<<"BS">>, [<<"blob">>]}},
+            {<<"field3">>, {<<"N">>, <<"string">>}},
+            {<<"field4">>, {<<"NS">>, [<<"string">>]}},
+            {<<"field5">>, {<<"S">>, <<"string">>}},
+            {<<"field6">>, {<<"SS">>, [<<"string">>]}}
+        ]},
+        {return_consumed_capacity, <<"string">>},
+        {return_item_collection_metrics, <<"string">>},
+        {return_values, <<"string">>},
+        {tablename, <<"table_name">>}],
     io:format("Actual: ~p~n", [Actual]),
     ?assertEqual(Expected, Actual).
 
