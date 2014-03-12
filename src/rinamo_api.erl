@@ -1,6 +1,7 @@
 -module(rinamo_api).
 
--export([create_table/2, list_tables/2, describe_table/2]).
+-export([create_table/2, list_tables/2, describe_table/2,
+         put_item/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -61,18 +62,23 @@ put_item(DynamoRequest, AWSContext) ->
   _ = rinamo_codec:decode_put_item(DynamoRequest),
   
   Table = <<"TBD">>,
+  Expected = <<"TBD">>,
   Item = <<"TBD">>,
 
-  Response = rinamo_items:put_item(Table, Item, AWSContext),
+  % Response = rinamo_items:put_item(Table, Item, AWSContext),
 
   %% Depending on Request params, Response will be modified
 
-  jsx:encode(Response).
+  % jsx:encode(Response).
+  ok.
 
 -ifdef(TEST).
 
 table_fixture() ->
   <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>.
+
+item_fixture() ->
+  <<"{\"TableName\":\"ProductCatalog\",\"Item\":{\"PageCount\":{\"N\":\"600\"},\"InPublication\":{\"N\":\"1\"},\"ISBN\":{\"S\":\"222-2222222222\"},\"Dimensions\":{\"S\":\"8.5 x 11.0 x 0.8\"},\"Price\":{\"N\":\"20\"},\"ProductCategory\":{\"S\":\"Book\"},\"Id\":{\"N\":\"102\"},\"Authors\":{\"SS\":[\"Author1\",\"Author2\"]},\"Title\":{\"S\":\"Book 102 Title\"}}}">>.
 
 create_table_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
@@ -135,6 +141,13 @@ describe_table_test() ->
   ?assertEqual(ResultDef, TableDef),
 
   meck:unload(rinamo_tables).
+
+put_item_test() ->
+  Input = item_fixture(),
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  Response = rinamo_api:put_item(jsx:decode(Input), AWSContext),
+  ok.
+
 
 
 -endif.
