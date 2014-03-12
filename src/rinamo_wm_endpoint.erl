@@ -75,11 +75,11 @@ accept_json(ReqData, Context) ->
 		"DeleteTable" -> {error, unimplemented};
 		"ListTables" -> {rinamo_api, list_tables};
 		"DescribeTable" -> {rinamo_api, describe_table};
-		"GetItem" -> {rinamo_api, get_item};
+		"GetItem" -> {error, unimplemented};
 		"PutItem" -> {rinamo_api, put_item};
 		"UpdateItem" -> {error, unimplemented};
 		"DeleteItem" -> {error, unimplemented};
-		"Query" -> {rinamo_api, query};
+		"Query" -> {error, unimplemented};
 		"Scan" -> {error, unimplemented};
 		"BatchGetItem" -> {error, unimplemented};
 		"BatchWriteItem" -> {error, unimplemented};
@@ -132,8 +132,11 @@ format_error_message(Message) ->
 
 -ifdef(TEST).
 
+auth_fixture() ->
+  "AWS4-HMAC-SHA256 Credential=RANDY_ACCESS_KEY/20140224/us-east-1/dynamodb/aws4_request, SignedHeaders=content-length;content-type;host;user-agent;x-amz-date;x-amz-target, Signature=81f71d83f35b3b2be9589f9ec0f5edca95b14d602f639b183e729d1fd1e3308c".
+
 dynamo_user_test() ->
-	Input = "AWS4-HMAC-SHA256 Credential=RANDY_ACCESS_KEY/20140224/us-east-1/dynamodb/aws4_request, SignedHeaders=content-length;content-type;host;user-agent;x-amz-date;x-amz-target, Signature=81f71d83f35b3b2be9589f9ec0f5edca95b14d602f639b183e729d1fd1e3308c",
+	Input = auth_fixture(),
 	Actual = dynamo_user(Input),
 	Expected = <<"RANDY_ACCESS_KEY">>,
 	?assertEqual(Expected, Actual),
