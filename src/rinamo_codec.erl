@@ -209,6 +209,7 @@ decode_keys([{KeyName, {struct, KeyValue}}|Rest], Acc) ->
     end,
     decode_keys(Rest, [KeyTypeValue|Acc]).
 
+
 decode_key_value([], Acc) ->
     lists:reverse(Acc);
 decode_key_value([{FieldType, FieldValue}|Rest], Acc) ->
@@ -229,6 +230,7 @@ decode_put_expected([Field|Rest], Acc) ->
     end,
     decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}|Acc]).
 
+
 decode_put_item([], Acc) ->
     lists:reverse(Acc);
 decode_put_item([{FieldName, [{FieldType, FieldValue}]}|Rest], Acc) ->
@@ -241,7 +243,6 @@ decode_table_attributes([Attribute|Rest], Acc) ->
     decode_table_attributes(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
                                    {<<"AttributeType">>, kvc:path("AttributeType", Attribute)} | Acc]).
 
-
 decode_2i([], Acc) ->
     lists:reverse(Acc);
 decode_2i([Index|Rest], Acc) ->
@@ -253,7 +254,6 @@ decode_2i([Index|Rest], Acc) ->
     IndexResult = [{IndexName,
              [{key_schema, KeySchema},
               {projection, Projection}]}],
-
     decode_2i(Rest, [IndexResult|Acc]).
 
 
@@ -263,15 +263,14 @@ decode_2i_key_schema([Attribute|Rest], Acc) ->
     decode_2i_key_schema(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)}, 
                                 {<<"KeyType">>, kvc:path("KeyType", Attribute)} | Acc]).
 
-
 decode_key_conditions([], Acc) ->
     lists:reverse(Acc);
 decode_key_conditions([Condition|Rest], Acc) ->
     {Key, {struct, Args}} = Condition,
     AttributeValues = decode_attribute_values(kvc:path("AttributeValueList", Args), []),
     ComparisonOperator = kvc:path("ComparisonOperator", Args),
-
     decode_key_conditions(Rest, [{binary:bin_to_list(Key), AttributeValues, binary:bin_to_list(ComparisonOperator)}|Acc]).
+
 
 decode_attribute_values([], Acc) ->
     lists:reverse(Acc);
@@ -282,6 +281,7 @@ decode_attribute_values([Attribute|Rest], Acc) ->
         _ -> binary:bin_to_list(Value)
     end,
     decode_attribute_values(Rest, [{binary:bin_to_list(Type), ValueList}|Acc]).
+
 
 -ifdef(TEST).
 
