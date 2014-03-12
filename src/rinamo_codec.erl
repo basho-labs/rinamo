@@ -227,20 +227,12 @@ decode_put_expected([Field|Rest], Acc) ->
         <<"true">> -> true;
         _ -> false
     end,
-    ValueList = case is_list(FieldValue) of
-        true -> lists:map(fun(X) -> X end, FieldValue);
-        _ -> FieldValue
-    end,
-    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, ValueList}]}|Acc]).
+    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}|Acc]).
 
 decode_put_item([], Acc) ->
     lists:reverse(Acc);
 decode_put_item([{FieldName, [{FieldType, FieldValue}]}|Rest], Acc) ->
-    ValueList = case is_list(FieldValue) of
-        true -> lists:map(fun(X) -> X end, FieldValue);
-        _ -> FieldValue
-    end,
-    decode_put_item(Rest, [{FieldName, {FieldType, ValueList}}|Acc]).
+    decode_put_item(Rest, [{FieldName, {FieldType, FieldValue}}|Acc]).
 
 
 decode_table_attributes([], Acc) ->
@@ -255,7 +247,7 @@ decode_2i([], Acc) ->
 decode_2i([Index|Rest], Acc) ->
     IndexName = kvc:path("IndexName", Index),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Index), []),
-    Projection = [{non_key_attributes, lists:map(fun(X) -> X end, kvc:path("Projection.NonKeyAttributes", Index))},
+    Projection = [{non_key_attributes, kvc:path("Projection.NonKeyAttributes", Index)},
                   {projection_type, kvc:path("Projection.ProjectionType", Index)}],
 
     IndexResult = [{IndexName,

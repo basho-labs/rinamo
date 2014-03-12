@@ -23,7 +23,7 @@ create_table(DynamoRequest, AWSContext) ->
   % Put things into Riak; LR = List Result, TR = Table Result
   {LR, TR} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
 
-  % handle KV failures
+  % TODO: handle KV failures
   % Response = case LR or TR of
   %   {error,all_nodes_down} ->
   %   _ -> % proceed as normal
@@ -45,7 +45,7 @@ create_table(DynamoRequest, AWSContext) ->
   % JSONify the Response
   rinamo_codec:encode_create_table_response(Response).
 
-list_tables(DynamoRequest, AWSContext) ->
+list_tables(_, AWSContext) ->
   Result = rinamo_tables:list_tables(AWSContext),
   Response = [{ <<"TableNames">>, Result }],
   jsx:encode(Response).
@@ -70,7 +70,7 @@ put_item(DynamoRequest, AWSContext) ->
   %% Depending on Request params, Response will be modified
 
   % jsx:encode(Response).
-  ok.
+  jsx:encode([{<<"response">>, <<"OK">>}]).
 
 -ifdef(TEST).
 
@@ -147,7 +147,6 @@ put_item_test() ->
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   Response = rinamo_api:put_item(jsx:decode(Input), AWSContext),
   ok.
-
 
 
 -endif.
