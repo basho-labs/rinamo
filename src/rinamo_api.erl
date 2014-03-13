@@ -12,49 +12,48 @@
 %%% Table Operations %%%
 
 create_table(DynamoRequest, AWSContext) ->
-  % Parse Request
   [ {_, Table}, {_, Fields}, {_, KeySchema}, {_, LSI},
     {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
    
-  % Creation Time
   {MegaSecs, Secs, MicroSecs} = now(),
   CreationTime = (MegaSecs * 1000000 + Secs) + MicroSecs / 1000000,
 
-  % Put things into Riak; LR = List Result, TR = Table Result
-  {LR, TR} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
+  case rinamo_tables:load_table_def(Table, AWSContext) of
+    notfound -> 
+      % LR = List Result, TR = Table Result
+      {LR, TR} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
 
-  % TODO: handle KV failures
-  % Response = case LR or TR of
-  %   {error,all_nodes_down} ->
-  %   _ -> % proceed as normal
-  % end,
+      % TODO: handle KV failures
+      % Response = case LR or TR of
+      %   {error,all_nodes_down} ->
+      %   _ -> % proceed as normal
+      % end,
 
-  % Enrich Response as needed
-  Response = [{ <<"TableDescription">>, [
-    {<<"TableName">>, Table},
-    {<<"AttributeDefinitions">>, [Fields]},
-    {<<"KeySchema">>, [KeySchema]},
-    {<<"ProvisionedThroughput">>, ProvisionedThroughput},
-    {<<"LocalSecondaryIndexes">>, [{}]},
-    {<<"GlobalSecondaryIndexes">>, [{}]},
-    {<<"TableSizeBytes">>, 0},
-    {<<"TableStatus">>, <<"CREATING">>},
-    {<<"CreationDateTime">>, CreationTime}
-  ]}],
+      % Enrich Response as needed
+      Response = [{ <<"TableDescription">>, [
+        {<<"TableName">>, Table},
+        {<<"AttributeDefinitions">>, [Fields]},
+        {<<"KeySchema">>, [KeySchema]},
+        {<<"ProvisionedThroughput">>, ProvisionedThroughput},
+        {<<"LocalSecondaryIndexes">>, [{}]},
+        {<<"GlobalSecondaryIndexes">>, [{}]},
+        {<<"TableSizeBytes">>, 0},
+        {<<"TableStatus">>, <<"CREATING">>},
+        {<<"CreationDateTime">>, CreationTime}
+      ]}];
+    _ ->
+      table_exists
+  end.
 
-  % JSONify the Response
-  rinamo_codec:encode_create_table_response(Response).
 
 list_tables(_, AWSContext) ->
   Result = rinamo_tables:list_tables(AWSContext),
-  Response = [{ <<"TableNames">>, Result }],
-  jsx:encode(Response).
+  Response = [{ <<"TableNames">>, Result }].
 
 describe_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
   Result = rinamo_tables:load_table_def(Table, AWSContext),
-  Response = [{ <<"Table">>, Result }],
-  jsx:encode(Response).
+  Response = [{ <<"Table">>, Result }].
 
 %%% Item Operations %%%
 
@@ -66,11 +65,7 @@ put_item(DynamoRequest, AWSContext) ->
   Response = case TableName of
     [] -> <<"{\"Epic\":\"Fail\"}">>;
     _ -> rinamo_items:put_item(TableName, Item, AWSContext)
-  end,
-
-  %% Depending on Request params, Response will be modified
-
-  jsx:encode(Response).
+  end.
 
 -ifdef(TEST).
 
@@ -82,12 +77,11 @@ item_fixture() ->
 
 create_table_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
+  meck:expect(rinamo_tables, load_table_def, 2, notfound),
   meck:expect(rinamo_tables, create_table, 3, {ok, ok}),
 
-  Input = table_fixture(),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Response = rinamo_api:create_table(jsx:decode(Input), AWSContext),
-  Actual = jsx:decode(Response),
+  Actual = rinamo_api:create_table(jsx:decode(table_fixture()), AWSContext),
   io:format("Actual: ~p", [Actual]),
   [{_, [{_,TableName}, {_, AttributeDefinitions}, {_, KeySchema},
      {_, ProvisionedThroughput}, {_, LSI}, {_, GSI},
@@ -118,8 +112,7 @@ list_tables_test() ->
 
   Input = <<"">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Response = rinamo_api:list_tables(Input, AWSContext),
-  Actual = jsx:decode(Response),
+  Actual = rinamo_api:list_tables(Input, AWSContext),
   io:format("Actual ~p", [Actual]),
   [{<<"TableNames">>, [R0, R1]}] = Actual,
   ?assertEqual(<<"Table_1">>, R0),
@@ -134,8 +127,7 @@ describe_table_test() ->
 
   Input = <<"{\"TableName\":\"ProductCatalog\"}">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Response = rinamo_api:describe_table(Input, AWSContext),
-  Actual = jsx:decode(Response),
+  Actual = rinamo_api:describe_table(Input, AWSContext),
   io:format("Actual ~p", [Actual]),
   [{<<"Table">>, ResultDef}] = Actual,
   ?assertEqual(ResultDef, TableDef),
@@ -143,18 +135,16 @@ describe_table_test() ->
   meck:unload(rinamo_tables).
 
 put_item_test() ->
-  Input = item_fixture(),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Response = rinamo_api:put_item(jsx:decode(Input), AWSContext),
-  Actual = jsx:decode(Response),
+  PutItem = jsx:decode(item_fixture()),
+  Actual = rinamo_api:put_item(PutItem, AWSContext),
   io:format("Actual ~p", [Actual]),
   ok. % TODO
 
 put_item_empty_test() ->
   Input = <<"{\"Item\":{}}">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Response = rinamo_api:put_item(jsx:decode(Input), AWSContext),
-  Actual = jsx:decode(Response),
+  Actual = rinamo_api:put_item(jsx:decode(Input), AWSContext),
   io:format("Actual ~p", [Actual]),
   ok. % TODO
 

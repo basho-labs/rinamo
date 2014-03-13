@@ -1,7 +1,7 @@
 -module(rinamo_codec).
 
--export([decode_create_table/1, encode_create_table_response/1,
-         decode_describe_table/1, decode_put_item/1]).
+-export([decode_create_table/1, decode_describe_table/1,
+         decode_put_item/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -124,9 +124,6 @@ decode_create_table(Json) ->
      {lsi, SecondaryIndexes},
      {provisioned_throughput, ProvisionedThroughput},
      {raw_schema, Json}].
-
-encode_create_table_response(Response) ->
-    jsx:encode(Response).
 
 decode_update_table(Request) ->
     ok.
@@ -516,16 +513,6 @@ decode_create_table_test() ->
                                           {<<"WriteCapacityUnits">>, 5}]},
                 {raw_schema, jsx:decode(Json_Bin)}
                 ],
-    ?assertEqual(Expected, Actual).
-
-encode_create_table_response_test() ->
-    Response = [{ <<"TableDescription">>, [
-      {<<"TableName">>, <<"TestTableName">>},
-      {<<"CreationTime">>, 1393894414.657089}
-    ]}],
-    Actual = encode_create_table_response(Response),
-    io:format("Actual: ~p~n", [Actual]),
-    Expected = <<"{\"TableDescription\":{\"TableName\":\"TestTableName\",\"CreationTime\":1393894414.657089}}">>,
     ?assertEqual(Expected, Actual).
 
 decode_update_table_test() ->

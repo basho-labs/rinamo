@@ -95,7 +95,11 @@ accept_json(ReqData, Context) ->
           case Result of
             insufficient_vnodes -> {{halt, 503}, wrq:set_resp_body(
               format_error_message("InternalServerErrorException", "Insufficient VNodes Available."), ReqData), AWSContext};
-            _ -> {true, wrq:set_resp_body(Result, ReqData), AWSContext}
+            table_exists -> {{halt, 409}, wrq:set_resp_body(
+              format_error_message("InternalServerErrorException", "Cannot create preexisting table."), ReqData), AWSContext};
+            _ ->
+              Response_Json = jsx:encode(Result),
+              {true, wrq:set_resp_body(Response_Json, ReqData), AWSContext}
           end
       end
   end.
