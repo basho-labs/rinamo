@@ -1,3 +1,4 @@
 .eunit
 deps
 ebin
+.local_dialyzer_plt

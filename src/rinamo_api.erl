@@ -59,18 +59,18 @@ describe_table(DynamoRequest, AWSContext) ->
 %%% Item Operations %%%
 
 put_item(DynamoRequest, AWSContext) ->
-  _ = rinamo_codec:decode_put_item(DynamoRequest),
-  
-  Table = <<"TBD">>,
-  Expected = <<"TBD">>,
-  Item = <<"TBD">>,
+  [ {_, Expected}, {_, Item}, {return_consumed_capacity, _},
+    {return_item_collection_metrics, _}, {return_values, _},
+    {tablename, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
-  % Response = rinamo_items:put_item(Table, Item, AWSContext),
+  Response = case TableName of
+    [] -> <<"{\"Epic\":\"Fail\"}">>;
+    _ -> rinamo_items:put_item(TableName, Item, AWSContext)
+  end,
 
   %% Depending on Request params, Response will be modified
 
-  % jsx:encode(Response).
-  jsx:encode([{<<"response">>, <<"OK">>}]).
+  jsx:encode(Response).
 
 -ifdef(TEST).
 
@@ -146,7 +146,17 @@ put_item_test() ->
   Input = item_fixture(),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   Response = rinamo_api:put_item(jsx:decode(Input), AWSContext),
-  ok.
+  Actual = jsx:decode(Response),
+  io:format("Actual ~p", [Actual]),
+  ok. % TODO
+
+put_item_empty_test() ->
+  Input = <<"{\"Item\":{}}">>,
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  Response = rinamo_api:put_item(jsx:decode(Input), AWSContext),
+  Actual = jsx:decode(Response),
+  io:format("Actual ~p", [Actual]),
+  ok. % TODO
 
 
 -endif.

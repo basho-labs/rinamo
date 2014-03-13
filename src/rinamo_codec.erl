@@ -220,6 +220,8 @@ decode_key_value([{FieldType, FieldValue}|Rest], Acc) ->
     decode_keys(Rest, [{binary:bin_to_list(FieldType), ValueList}|Acc]).
 
 
+decode_put_expected([{}], Acc) ->
+    [{}];
 decode_put_expected([], Acc) ->
     lists:reverse(Acc);
 decode_put_expected([Field|Rest], Acc) ->
@@ -231,6 +233,8 @@ decode_put_expected([Field|Rest], Acc) ->
     decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}|Acc]).
 
 
+decode_put_item([{}], Acc) ->
+    [{}];
 decode_put_item([], Acc) ->
     lists:reverse(Acc);
 decode_put_item([{FieldName, [{FieldType, FieldValue}]}|Rest], Acc) ->

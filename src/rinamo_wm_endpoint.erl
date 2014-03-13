@@ -4,10 +4,9 @@
     init/1,
     service_available/2,
     allowed_methods/2,
+    allow_missing_post/2,
     content_types_accepted/2,
-    content_types_provided/2,
     malformed_request/2,
-    resource_exists/2,
     process_post/2,
     post_is_create/2,
     create_path/2,
@@ -31,6 +30,9 @@ service_available(ReqData, Context=#ctx{}) ->
 		Context
 	}.
 
+allow_missing_post(ReqData, Context) ->
+	{false, ReqData, Context}.
+
 allowed_methods(ReqData, Context) ->
 	{['POST'], ReqData, Context}.
 
@@ -38,29 +40,19 @@ content_types_accepted(ReqData, Context) ->
 	{[{"application/json", accept_json}, 
 	  {"application/x-amz-json-1.0", accept_json}], ReqData, Context}.
 
-content_types_provided(ReqData, Context) ->
-    {[{"application/json", to_json}], ReqData, Context}.
-
 malformed_request(ReqData, Context) ->
 	{false, ReqData, Context}.
 
-resource_exists(ReqData, Context) ->
+process_post(ReqData, Context) ->
 	{true, ReqData, Context}.
 
 post_is_create(ReqData, Context) ->
     {true, ReqData, Context}.
 
-process_post(ReqData, Context) ->
-	{true, ReqData, Context}.
-
-% TODO:  revisit, add tenancy & table_name / item_name
+% AWS does not set a Location, but they use a unique request id
 create_path(ReqData, Context) ->
     K = riak_core_util:unique_id_62(),
-    {K,
-     wrq:set_resp_header("Location",
-                         string:join(["base", K], "/"),
-                         ReqData),
-     Context}.
+    {K, wrq:set_resp_header("x-amzn-RequestId", K, ReqData), Context}.
 
 %% Non-webmachine
 
@@ -86,19 +78,25 @@ accept_json(ReqData, Context) ->
 		_ -> {error, unimplemented}
 	end,
 
-	lager:debug("accept_json: ~p~n", [AWSContext]),
+	lager:debug("AWSContext: ~p~n", [AWSContext]),
 	lager:debug("Op: ~p~n", [Op]),
 
 	case AWSContext#ctx.user_key of
 		undefined -> {{halt, 403}, wrq:set_resp_body(
-			format_error_message("User Key Undefined"), ReqData), AWSContext};
+			format_error_message("MissingAuthenticationToken",
+								 "Request must contain a valid (registered) access key ID."), ReqData), AWSContext};
 		_ ->
 			case Operation of
 				{error, unimplemented} -> {{halt, 501}, wrq:set_resp_body(
-					format_error_message("Operation Not Specified"), ReqData), AWSContext};
+					format_error_message("InternalServerErrorException", "Operation Not Specified."), ReqData), AWSContext};
 				{Module, Function} -> 
-					Result = erlang:apply(Module, Function, [jsx:decode(wrq:req_body(ReqData)), AWSContext]),
-					{true, wrq:set_resp_body(Result, ReqData), AWSContext}
+					Result = (catch erlang:apply(Module, Function, [jsx:decode(wrq:req_body(ReqData)), AWSContext])),
+					lager:debug("Operation Result: ~p~n", [Result]),
+					case Result of
+						insufficient_vnodes -> {{halt, 503}, wrq:set_resp_body(
+							format_error_message("InternalServerErrorException", "Insufficient VNodes Available."), ReqData), AWSContext};
+						_ -> {true, wrq:set_resp_body(Result, ReqData), AWSContext}
+					end
 			end
 	end.
 
@@ -126,8 +124,8 @@ dynamo_op(TargetHeader) ->
 			end
 	end.
 
-format_error_message(Message) ->
-	"{\n  \"message\":\"" ++ Message ++ "\"\n  \"documentation_url\":\"http://docs.basho.com\"\n}".
+format_error_message(Type, Message) ->
+	"{\"__type\":\"com.amazonaws.dynamodb.v20120810#" ++ Type ++ "\",\"Message\":\"" ++ Message ++ "\"}".
 
 
 -ifdef(TEST).
