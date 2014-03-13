@@ -64,7 +64,7 @@ accept_json(ReqData, Context) ->
   Operation = case Op of
     "CreateTable" -> {rinamo_api, create_table};
     "UpdateTable" -> {error, unimplemented};
-    "DeleteTable" -> {error, unimplemented};
+    "DeleteTable" -> {rinamo_api, delete_table};
     "ListTables" -> {rinamo_api, list_tables};
     "DescribeTable" -> {rinamo_api, describe_table};
     "GetItem" -> {error, unimplemented};

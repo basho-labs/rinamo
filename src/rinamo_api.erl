@@ -1,6 +1,7 @@
 -module(rinamo_api).
 
--export([create_table/2, list_tables/2, describe_table/2,
+-export([create_table/2, list_tables/2,
+         describe_table/2, delete_table/2,
          put_item/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
@@ -45,7 +46,6 @@ create_table(DynamoRequest, AWSContext) ->
       table_exists
   end.
 
-
 list_tables(_, AWSContext) ->
   Result = rinamo_tables:list_tables(AWSContext),
   Response = [{ <<"TableNames">>, Result }].
@@ -54,6 +54,11 @@ describe_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
   Result = rinamo_tables:load_table_def(Table, AWSContext),
   Response = [{ <<"Table">>, Result }].
+
+delete_table(DynamoRequest, AWSContext) ->
+  [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
+  Result = rinamo_tables:delete_table(Table, AWSContext),
+  Response = [{ <<"TableDescription">>, Result }].
 
 %%% Item Operations %%%
 

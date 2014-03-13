@@ -1,6 +1,7 @@
 -module(rinamo_tables).
 
--export([create_table/3, list_tables/1, load_table_def/2]).
+-export([create_table/3, list_tables/1,
+         load_table_def/2, delete_table/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -77,6 +78,29 @@ load_table_def(Table, AWSContext) ->
     notfound -> notfound;
     _ -> jsx:decode(Table_V)
   end.
+
+delete_table(Table, AWSContext) ->
+  TD = load_table_def(Table, AWSContext),
+
+  UserKey = AWSContext#ctx.user_key,
+
+  B = UserKey,
+  Table_K = Table,
+
+  % remove table def
+  C = yz_kv:client(),
+  R0 = C:delete(B, Table_K),
+
+  % remove from table list
+  List_K = <<"TableList">>,
+  List_V = jsx:encode(list_tables(AWSContext) -- [Table]),
+  R1 = yz_kv:put(
+    yz_kv:client(),
+    B, List_K, List_V,
+    "application/json"),
+
+  TD.
+
 
 %% Internal
 
