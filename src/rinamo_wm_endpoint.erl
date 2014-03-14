@@ -121,7 +121,7 @@ dynamo_op(TargetHeader) ->
   case TargetHeader of
     undefined -> {undefined, undefined};
     _ ->
-        case string:chr(TargetHeader, $.) of
+      case string:chr(TargetHeader, $.) of
         0 -> {TargetHeader, undefined};
         Pos -> {string:substr(TargetHeader, Pos+1), string:substr(TargetHeader, 1, Pos-1)}
       end

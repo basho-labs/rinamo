@@ -68,8 +68,10 @@ put_item(DynamoRequest, AWSContext) ->
     {tablename, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
   case TableName of
-    [] -> <<"{\"Epic\":\"Fail\"}">>;
-    _ -> rinamo_items:put_item(TableName, Item, AWSContext)
+    [] -> table_missing;
+    _ ->
+      Result = rinamo_items:put_item(TableName, Item, AWSContext),
+      [{ <<"Finish Later">>, Result }]
   end.
 
 -ifdef(TEST).
@@ -151,16 +153,15 @@ describe_table_test() ->
 put_item_test() ->
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   PutItem = jsx:decode(item_fixture()),
-  Actual = rinamo_api:put_item(PutItem, AWSContext),
-  io:format("Actual ~p", [Actual]),
-  ok. % TODO
+  [_, PutItemNoTable] = PutItem,
 
-put_item_empty_test() ->
-  Input = <<"{\"Item\":{}}">>,
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Actual = rinamo_api:put_item(jsx:decode(Input), AWSContext),
-  io:format("Actual ~p", [Actual]),
-  ok. % TODO
+  R1 = rinamo_api:put_item(PutItemNoTable, AWSContext),
+  io:format("Actual ~p", [R1]),
+  ?assertEqual(table_missing, R1),
+
+  R2 = rinamo_api:put_item(PutItem, AWSContext),
+  io:format("Actual ~p", [R2]),
+  ?assertEqual([{<<"Finish Later">>, [{<<"response">>,<<"OK">>}]}], R2).
 
 
 -endif.
