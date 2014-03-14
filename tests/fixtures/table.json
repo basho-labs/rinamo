@@ -1,0 +1,19 @@
+{
+  "ProvisionedThroughput": {
+    "WriteCapacityUnits": 5,
+    "ReadCapacityUnits": 10
+  },
+  "KeySchema": [
+    {
+      "KeyType": "HASH",
+      "AttributeName": "Id"
+    }
+  ],
+  "TableName": "ProductCatalog",
+  "AttributeDefinitions": [
+    {
+      "AttributeType": "N",
+      "AttributeName": "Id"
+    }
+  ]
+}

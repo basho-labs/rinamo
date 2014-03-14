@@ -70,26 +70,19 @@ put_item(DynamoRequest, AWSContext) ->
   case TableName of
     [] -> table_missing;
     _ ->
-      Result = rinamo_items:put_item(TableName, Item, AWSContext),
-      [{ <<"Finish Later">>, Result }]
+      _ = rinamo_items:put_item(TableName, Item, AWSContext),
+      [{}]
   end.
 
 -ifdef(TEST).
 
 table_fixture() ->
-  <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",
-      \"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\",
-      \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}],
-      \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,
-      \"WriteCapacityUnits\":5}}">>.
+  {_, Fixture} = file:read_file("../tests/fixtures/table.json"),
+  Fixture.
 
 item_fixture() ->
-  <<"{\"TableName\":\"ProductCatalog\",\"Item\":{\"PageCount\":{\"N\":\"600\"},
-      \"InPublication\":{\"N\":\"1\"},\"ISBN\":{\"S\":\"222-2222222222\"},
-      \"Dimensions\":{\"S\":\"8.5 x 11.0 x 0.8\"},\"Price\":{\"N\":\"20\"},
-      \"ProductCategory\":{\"S\":\"Book\"},\"Id\":{\"N\":\"102\"},
-      \"Authors\":{\"SS\":[\"Author1\",\"Author2\"]},
-      \"Title\":{\"S\":\"Book 102 Title\"}}}">>.
+  {_, Fixture} = file:read_file("../tests/fixtures/item.json"),
+  Fixture.
 
 create_table_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
@@ -151,6 +144,10 @@ describe_table_test() ->
   meck:unload(rinamo_tables).
 
 put_item_test() ->
+  TableDef = jsx:decode(table_fixture()),
+  meck:new(rinamo_tables, [non_strict, passthrough]),
+  meck:expect(rinamo_tables, load_table_def, 2, TableDef),
+
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   PutItem = jsx:decode(item_fixture()),
   [_, PutItemNoTable] = PutItem,
@@ -161,7 +158,10 @@ put_item_test() ->
 
   R2 = rinamo_api:put_item(PutItem, AWSContext),
   io:format("Actual ~p", [R2]),
-  ?assertEqual([{<<"Finish Later">>, [{<<"response">>,<<"OK">>}]}], R2).
+  ?assertEqual([{}], R2),
+
+  meck:unload(rinamo_tables).
+
 
 
 -endif.

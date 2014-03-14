@@ -96,7 +96,9 @@ accept_json(ReqData, Context) ->
             insufficient_vnodes -> {{halt, 503}, wrq:set_resp_body(
               format_error_message("InternalServerErrorException", "Insufficient VNodes Available."), ReqData), AWSContext};
             table_exists -> {{halt, 409}, wrq:set_resp_body(
-              format_error_message("InternalServerErrorException", "Cannot create preexisting table."), ReqData), AWSContext};
+              format_error_message("ResourceInUseException", "Cannot create preexisting table."), ReqData), AWSContext};
+            table_missing -> {{halt, 412}, wrq:set_resp_body(
+              format_error_message("ResourceNotFoundException", "Cannot do operations on a non-existent table."), ReqData), AWSContext};
             _ ->
               Response_Json = jsx:encode(Result),
               {{halt, 200}, wrq:set_resp_body(Response_Json, ReqData), AWSContext}

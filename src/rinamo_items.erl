@@ -9,38 +9,45 @@
 -endif.
 
 put_item(Table, Item, AWSContext) ->
-  KeySchema = get_keyschema(Table, AWSContext),
-  Key = get_key(Item, KeySchema),
+  {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
+  {FieldType, KeyValue} = kvc:path(KeyAttribute, Item),
 
-
-  [{<<"response">>, <<"OK">>}].
+  lager:debug("KeyAttribute: ~p, KeyType: ~p, FieldType: ~p, KeyValue: ~p",
+              [KeyAttribute, KeyType, FieldType, KeyValue]).
 
 %% Internal
 
+% -spec get_keyschema(binary(), #ctx{ user_key = binary() } -> tuple().
 get_keyschema(Table, AWSContext) ->
-  % TableDef = rinamo_tables:load_table_def(Table, AWSContext),
-  ok.
+  TD = rinamo_tables:load_table_def(Table, AWSContext),
+  case TD of
+    notfound -> throw(table_missing);
+    _ ->
+      [AttributeName] = kvc:path("KeySchema.AttributeName", TD),
+      [KeyType] = kvc:path("KeySchema.KeyType", TD),
+      {AttributeName, KeyType}
+  end.
 
-get_key(Item, KeySchema) ->
-  ok.
 
 -ifdef(TEST).
 
+table_fixture() ->
+  {_, Fixture} = file:read_file("../tests/fixtures/table.json"),
+  Fixture.
+
+item_fixture() ->
+  {_, Fixture} = file:read_file("../tests/fixtures/item.json"),
+  Fixture.
+
 put_item_test() ->
+  meck:new(rinamo_tables, [non_strict]),
+  meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(table_fixture())),
+
   Table = <<"TableName">>,
+  Item = kvc:path(item, rinamo_codec:decode_put_item(jsx:decode(item_fixture()))),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Item = [{<<"PageCount">>,{<<"N">>,<<"600">>}},
-   {<<"InPublication">>,{<<"N">>,<<"1">>}},
-   {<<"ISBN">>,{<<"S">>,<<"222-2222222222">>}},
-   {<<"Dimensions">>,{<<"S">>,<<"8.5 x 11.0 x 0.8">>}},
-   {<<"Price">>,{<<"N">>,<<"20">>}},
-   {<<"ProductCategory">>,{<<"S">>,<<"Book">>}},
-   {<<"Id">>,{<<"N">>,<<"102">>}},
-   {<<"Authors">>,{<<"SS">>,[<<"Author1">>,<<"Author2">>]}},
-   {<<"Title">>,{<<"S">>,<<"Book 102 Title">>}}],
   Response = put_item(Table, Item, AWSContext),
-  ok.
+
+  meck:unload([rinamo_tables]).
 
 -endif.
-
-
