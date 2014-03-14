@@ -75,10 +75,19 @@ put_item(DynamoRequest, AWSContext) ->
 -ifdef(TEST).
 
 table_fixture() ->
-  <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",\"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\", \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}], \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,\"WriteCapacityUnits\":5}}">>.
+  <<"{\"AttributeDefinitions\": [{ \"AttributeName\":\"Id\",
+      \"AttributeType\":\"N\"}], \"TableName\":\"ProductCatalog\",
+      \"KeySchema\":[{\"AttributeName\":\"Id\",\"KeyType\":\"HASH\"}],
+      \"ProvisionedThroughput\":{\"ReadCapacityUnits\":10,
+      \"WriteCapacityUnits\":5}}">>.
 
 item_fixture() ->
-  <<"{\"TableName\":\"ProductCatalog\",\"Item\":{\"PageCount\":{\"N\":\"600\"},\"InPublication\":{\"N\":\"1\"},\"ISBN\":{\"S\":\"222-2222222222\"},\"Dimensions\":{\"S\":\"8.5 x 11.0 x 0.8\"},\"Price\":{\"N\":\"20\"},\"ProductCategory\":{\"S\":\"Book\"},\"Id\":{\"N\":\"102\"},\"Authors\":{\"SS\":[\"Author1\",\"Author2\"]},\"Title\":{\"S\":\"Book 102 Title\"}}}">>.
+  <<"{\"TableName\":\"ProductCatalog\",\"Item\":{\"PageCount\":{\"N\":\"600\"},
+      \"InPublication\":{\"N\":\"1\"},\"ISBN\":{\"S\":\"222-2222222222\"},
+      \"Dimensions\":{\"S\":\"8.5 x 11.0 x 0.8\"},\"Price\":{\"N\":\"20\"},
+      \"ProductCategory\":{\"S\":\"Book\"},\"Id\":{\"N\":\"102\"},
+      \"Authors\":{\"SS\":[\"Author1\",\"Author2\"]},
+      \"Title\":{\"S\":\"Book 102 Title\"}}}">>.
 
 create_table_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
