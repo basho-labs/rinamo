@@ -19,8 +19,8 @@ create_table(Table, RawSchema, AWSContext) ->
   Table_K = Table,
   Table_V = jsx:encode(RawSchema),
 
-  {_, List} = yz_kv:get(
-    yz_kv:client(), B, List_K
+  {_, List} = rinamo_kv:get(
+    rinamo_kv:client(), B, List_K
   ),
 
   lager:debug("Prior List State: ~p~n", [List]),
@@ -32,14 +32,14 @@ create_table(Table, RawSchema, AWSContext) ->
   end,
 
   % update table list
-  R0 = yz_kv:put(
-    yz_kv:client(),
+  R0 = rinamo_kv:put(
+    rinamo_kv:client(),
     B, List_K, List_V,
     "application/json"),
 
   % save off table def
-  R1 = yz_kv:put(
-    yz_kv:client(),
+  R1 = rinamo_kv:put(
+    rinamo_kv:client(),
     B, Table_K, Table_V,
     "application/json"),
 
@@ -53,8 +53,8 @@ list_tables(AWSContext) ->
   B = UserKey,
   List_K = <<"TableList">>,
 
-  {_, List} = yz_kv:get(
-    yz_kv:client(), B, List_K
+  {_, List} = rinamo_kv:get(
+    rinamo_kv:client(), B, List_K
   ),
 
   case List of
@@ -69,8 +69,8 @@ load_table_def(Table, AWSContext) ->
   B = UserKey,
   Table_K = Table,
 
-  {_, Table_V} = yz_kv:get(
-    yz_kv:client(), B, Table_K
+  {_, Table_V} = rinamo_kv:get(
+    rinamo_kv:client(), B, Table_K
   ),
 
   case Table_V of
@@ -88,14 +88,15 @@ delete_table(Table, AWSContext) ->
   Table_K = Table,
 
   % remove table def
-  C = yz_kv:client(),
-  R0 = C:delete(B, Table_K),
+  R0 = rinamo_kv:delete(
+    rinamo_kv:client(),
+    B, Table_K),
 
   % remove from table list
   List_K = <<"TableList">>,
   List_V = jsx:encode(list_tables(AWSContext) -- [Table]),
-  R1 = yz_kv:put(
-    yz_kv:client(),
+  R1 = rinamo_kv:put(
+    rinamo_kv:client(),
     B, List_K, List_V,
     "application/json"),
 
@@ -110,10 +111,10 @@ update_table_list(TableList, Table) ->
 -ifdef(TEST).
 
 create_table_test() ->
-  meck:new(yz_kv, [non_strict]),
-  meck:expect(yz_kv, client, fun() -> ok end),
-  meck:expect(yz_kv, get, fun(_, _, _) -> {value, <<"[\"one\",\"two\",\"three\"]">>} end),
-  meck:expect(yz_kv, put, fun(_, _, _, _, _) -> ok end),
+  meck:new(rinamo_kv, [non_strict]),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, get, 3, {value, <<"[\"one\",\"two\",\"three\"]">>}),
+  meck:expect(rinamo_kv, put, 5, ok),
 
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   Table = <<"TableName">>,
@@ -129,12 +130,12 @@ create_table_test() ->
   Expected = {ok, ok},
   ?assertEqual(Expected, Actual),
 
-  meck:unload(yz_kv).
+  meck:unload(rinamo_kv).
 
 list_tables_test() ->
-  meck:new(yz_kv, [non_strict]),
-  meck:expect(yz_kv, client, fun() -> ok end),
-  meck:expect(yz_kv, get, fun(_, _, _) -> {value, <<"[\"one\",\"two\",\"three\"]">>} end),
+  meck:new(rinamo_kv, [non_strict]),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, get, 3, {value, <<"[\"one\",\"two\",\"three\"]">>}),
 
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
 
@@ -142,12 +143,12 @@ list_tables_test() ->
   Expected = [<<"one">>, <<"two">>, <<"three">>],
   ?assertEqual(Expected, Actual),
 
-  meck:unload(yz_kv).
+  meck:unload(rinamo_kv).
 
 load_table_def_test() ->
-  meck:new(yz_kv, [non_strict]),
-  meck:expect(yz_kv, client, fun() -> ok end),
-  meck:expect(yz_kv, get, fun(_, _, _) -> {value, <<"[\"Some_Table_Def_JSON_Here\"]">>} end),
+  meck:new(rinamo_kv, [non_strict]),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, get, 3, {value, <<"[\"Some_Table_Def_JSON_Here\"]">>}),
 
   Table = <<"Some_Table">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
@@ -156,7 +157,22 @@ load_table_def_test() ->
   Expected = [<<"Some_Table_Def_JSON_Here">>],
   ?assertEqual(Expected, Actual),
 
-  meck:unload(yz_kv).
+  meck:unload(rinamo_kv).
 
+delete_table_test() ->
+  meck:new(rinamo_kv, [non_strict]),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, get, 3, {value, <<"[\"Some_Table_Def_JSON_Here\"]">>}),
+  meck:expect(rinamo_kv, delete, 3, ok),
+  meck:expect(rinamo_kv, put, 5, ok),
+
+  Table = <<"Another Table">>,
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  Actual = delete_table(Table, AWSContext),
+  Expected = [<<"Some_Table_Def_JSON_Here">>],
+  ?assertEqual(Expected, Actual),
+
+  meck:unload([rinamo_kv]).
 
 -endif.

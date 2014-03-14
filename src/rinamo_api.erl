@@ -15,12 +15,12 @@
 create_table(DynamoRequest, AWSContext) ->
   [ {_, Table}, {_, Fields}, {_, KeySchema}, {_, LSI},
     {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
-   
+
   {MegaSecs, Secs, MicroSecs} = now(),
   CreationTime = (MegaSecs * 1000000 + Secs) + MicroSecs / 1000000,
 
   case rinamo_tables:load_table_def(Table, AWSContext) of
-    notfound -> 
+    notfound ->
       % LR = List Result, TR = Table Result
       {LR, TR} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
 
@@ -31,7 +31,7 @@ create_table(DynamoRequest, AWSContext) ->
       % end,
 
       % Enrich Response as needed
-      Response = [{ <<"TableDescription">>, [
+      [{ <<"TableDescription">>, [
         {<<"TableName">>, Table},
         {<<"AttributeDefinitions">>, [Fields]},
         {<<"KeySchema">>, [KeySchema]},
@@ -48,17 +48,17 @@ create_table(DynamoRequest, AWSContext) ->
 
 list_tables(_, AWSContext) ->
   Result = rinamo_tables:list_tables(AWSContext),
-  Response = [{ <<"TableNames">>, Result }].
+  [{ <<"TableNames">>, Result }].
 
 describe_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
   Result = rinamo_tables:load_table_def(Table, AWSContext),
-  Response = [{ <<"Table">>, Result }].
+  [{ <<"Table">>, Result }].
 
 delete_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
   Result = rinamo_tables:delete_table(Table, AWSContext),
-  Response = [{ <<"TableDescription">>, Result }].
+  [{ <<"TableDescription">>, Result }].
 
 %%% Item Operations %%%
 
@@ -67,7 +67,7 @@ put_item(DynamoRequest, AWSContext) ->
     {return_item_collection_metrics, _}, {return_values, _},
     {tablename, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
-  Response = case TableName of
+  case TableName of
     [] -> <<"{\"Epic\":\"Fail\"}">>;
     _ -> rinamo_items:put_item(TableName, Item, AWSContext)
   end.
@@ -108,7 +108,7 @@ create_table_test() ->
   ?assertEqual([{}], GSI),
   ?assertEqual(0, TableSize),
   ?assert(CreationDateTime > 0),
-  
+
   meck:unload(rinamo_tables).
 
 list_tables_test() ->
