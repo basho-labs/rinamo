@@ -37,7 +37,7 @@ allowed_methods(ReqData, Context) ->
   {['POST'], ReqData, Context}.
 
 content_types_accepted(ReqData, Context) ->
-  {[{"application/json", accept_json}, 
+  {[{"application/json", accept_json},
     {"application/x-amz-json-1.0", accept_json}], ReqData, Context}.
 
 malformed_request(ReqData, Context) ->
@@ -89,7 +89,7 @@ accept_json(ReqData, Context) ->
       case Operation of
         {error, unimplemented} -> {{halt, 501}, wrq:set_resp_body(
           format_error_message("InternalServerErrorException", "Operation Not Specified."), ReqData), AWSContext};
-        {Module, Function} -> 
+        {Module, Function} ->
           Result = (catch erlang:apply(Module, Function, [jsx:decode(wrq:req_body(ReqData)), AWSContext])),
           lager:debug("Operation Result: ~p~n", [Result]),
           case Result of
@@ -99,7 +99,7 @@ accept_json(ReqData, Context) ->
               format_error_message("InternalServerErrorException", "Cannot create preexisting table."), ReqData), AWSContext};
             _ ->
               Response_Json = jsx:encode(Result),
-              {true, wrq:set_resp_body(Response_Json, ReqData), AWSContext}
+              {{halt, 200}, wrq:set_resp_body(Response_Json, ReqData), AWSContext}
           end
       end
   end.
