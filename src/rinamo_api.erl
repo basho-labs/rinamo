@@ -21,14 +21,9 @@ create_table(DynamoRequest, AWSContext) ->
 
   case rinamo_tables:load_table_def(Table, AWSContext) of
     notfound ->
-      % LR = List Result, TR = Table Result
-      {LR, TR} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
-
-      % TODO: handle KV failures
-      % Response = case LR or TR of
-      %   {error,all_nodes_down} ->
-      %   _ -> % proceed as normal
-      % end,
+      % TODO: We can make this async later, for now just drop the result.
+      % {LR, TR) => (LR = List Result, TR = Table Result)
+      {_, _} = rinamo_tables:create_table(Table, RawSchema, AWSContext),
 
       % Enrich Response as needed
       [{ <<"TableDescription">>, [
@@ -70,6 +65,7 @@ put_item(DynamoRequest, AWSContext) ->
   case TableName of
     [] -> table_missing;
     _ ->
+      % TODO: We can make this async later, result can be dropped.
       _ = rinamo_items:put_item(TableName, Item, AWSContext),
       [{}]
   end.

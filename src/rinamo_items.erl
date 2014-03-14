@@ -12,12 +12,14 @@ put_item(Table, Item, AWSContext) ->
   {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
   {FieldType, KeyValue} = kvc:path(KeyAttribute, Item),
 
+  % TODO: Create PutItem Data Model & Save
+
   lager:debug("KeyAttribute: ~p, KeyType: ~p, FieldType: ~p, KeyValue: ~p",
               [KeyAttribute, KeyType, FieldType, KeyValue]).
 
 %% Internal
 
-% -spec get_keyschema(binary(), #ctx{ user_key = binary() } -> tuple().
+-spec get_keyschema(binary(), #ctx{ user_key :: binary() }) -> tuple().
 get_keyschema(Table, AWSContext) ->
   TD = rinamo_tables:load_table_def(Table, AWSContext),
   case TD of

@@ -87,15 +87,17 @@ delete_table(Table, AWSContext) ->
   B = UserKey,
   Table_K = Table,
 
+  % TODO: the following can be async
+
   % remove table def
-  R0 = rinamo_kv:delete(
+  _ = rinamo_kv:delete(
     rinamo_kv:client(),
     B, Table_K),
 
   % remove from table list
   List_K = <<"TableList">>,
   List_V = jsx:encode(list_tables(AWSContext) -- [Table]),
-  R1 = rinamo_kv:put(
+  _ = rinamo_kv:put(
     rinamo_kv:client(),
     B, List_K, List_V,
     "application/json"),
