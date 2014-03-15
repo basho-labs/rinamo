@@ -81,6 +81,10 @@ load_table_def(Table, AWSContext) ->
 
 delete_table(Table, AWSContext) ->
   TD = load_table_def(Table, AWSContext),
+  case TD of
+    notfound -> throw(table_missing);
+    _ -> ok
+  end,
 
   UserKey = AWSContext#ctx.user_key,
 
