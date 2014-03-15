@@ -8,16 +8,37 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+-spec put_item(binary(), any(), #ctx{ user_key :: binary() }) -> ok.
 put_item(Table, Item, AWSContext) ->
+  UserKey = AWSContext#ctx.user_key,
   {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
   {FieldType, KeyValue} = kvc:path(KeyAttribute, Item),
 
-  % TODO: Create PutItem Data Model & Save
-
   lager:debug("KeyAttribute: ~p, KeyType: ~p, FieldType: ~p, KeyValue: ~p",
-              [KeyAttribute, KeyType, FieldType, KeyValue]).
+              [KeyAttribute, KeyType, FieldType, KeyValue]),
+
+  case KeyType of
+    <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, Item);
+    <<"RANGE">> -> ok
+  end.
 
 %% Internal
+
+-spec store_hash_key(binary(), binary(), [binary()], binary()) -> ok.
+store_hash_key(User, Table, [], Value) ->
+  ok;
+store_hash_key(User, Table, [Key|Rest], Value) ->
+  store_hash_key(User, Table, Rest, Value),
+  store_hash_key(User, Table, Key, Value);
+store_hash_key(User, Table, Key, Value) ->
+  lager:debug("Storing: ~p:", [Key]),
+
+  % TODO: Create PutItem Data Model & Save
+  % Bucket:  UserKey + Table
+  % Key: KeyValue if KeyType == <<"HASH">>
+  % Value: Item (json blob it)
+
+  ok.
 
 -spec get_keyschema(binary(), #ctx{ user_key :: binary() }) -> tuple().
 get_keyschema(Table, AWSContext) ->
@@ -48,7 +69,7 @@ put_item_test() ->
   Table = <<"TableName">>,
   Item = kvc:path(item, rinamo_codec:decode_put_item(jsx:decode(item_fixture()))),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Response = put_item(Table, Item, AWSContext),
+  _ = put_item(Table, Item, AWSContext),
 
   meck:unload([rinamo_tables]).
 
