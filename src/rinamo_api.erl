@@ -41,14 +41,28 @@ create_table(DynamoRequest, AWSContext) ->
       table_exists
   end.
 
-list_tables(_, AWSContext) ->
-  Result = rinamo_tables:list_tables(AWSContext),
-  [{ <<"TableNames">>, Result }].
+list_tables(DynamoRequest, AWSContext) ->
+  [ {_, ExclusiveStart},
+    {_, Limit} ] = rinamo_codec:decode_list_tables(DynamoRequest),
+  lager:debug("ExclusiveStart: ~p, Limit: ~p~n", [ExclusiveStart, Limit]),
+  TableList = rinamo_tables:list_tables(AWSContext),
+  { Result, LastEval } = filter_table_list(TableList, Limit),
+  [{ <<"TableNames">>, Result }, { <<"LastEvaluatedTableName">>, LastEval }].
+
+-spec filter_table_list([binary()], integer()) -> {[binary()], binary()}.
+filter_table_list(TableList, Limit) when is_integer(Limit), Limit >= 0 ->
+  { Filtered, Rest } = lists:split(Limit, TableList),
+  { Filtered, lists:last(Filtered) };
+filter_table_list(TableList, Limit) ->
+  { TableList, lists:last(TableList) }.
 
 describe_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
   Result = rinamo_tables:load_table_def(Table, AWSContext),
-  [{ <<"Table">>, Result }].
+  case Result of
+    notfound -> throw(table_missing);
+    _ -> [{ <<"Table">>, Result }]
+  end.
 
 delete_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
@@ -115,11 +129,12 @@ list_tables_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
   meck:expect(rinamo_tables, list_tables, 1, [<<"Table_1">>, <<"Table_2">>]),
 
-  Input = <<"">>,
+  Input = <<"{\"Limit\":2}">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Actual = rinamo_api:list_tables(Input, AWSContext),
+  Actual = rinamo_api:list_tables(jsx:decode(Input), AWSContext),
   io:format("Actual ~p", [Actual]),
-  [{<<"TableNames">>, [R0, R1]}] = Actual,
+  [{<<"TableNames">>, [R0, R1]},
+   {<<"LastEvaluatedTableName">>, R1}] = Actual,
   ?assertEqual(<<"Table_1">>, R0),
   ?assertEqual(<<"Table_2">>, R1),
 
@@ -132,7 +147,7 @@ describe_table_test() ->
 
   Input = <<"{\"TableName\":\"ProductCatalog\"}">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  Actual = rinamo_api:describe_table(Input, AWSContext),
+  Actual = rinamo_api:describe_table(jsx:decode(Input), AWSContext),
   io:format("Actual ~p", [Actual]),
   [{<<"Table">>, ResultDef}] = Actual,
   ?assertEqual(ResultDef, TableDef),

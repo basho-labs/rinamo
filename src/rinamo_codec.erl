@@ -1,7 +1,7 @@
 -module(rinamo_codec).
 
 -export([decode_create_table/1, decode_describe_table/1,
-         decode_put_item/1]).
+         decode_list_tables/1, decode_put_item/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -12,6 +12,12 @@ decode_batch_get_item(Request) ->
 
 decode_batch_write_item(Request) ->
     ok.
+
+decode_list_tables(Json) ->
+  Limit = kvc:path("Limit", Json),
+  ExclusiveStart = kvc:path("ExclusiveStartTableName", Json),
+  [{exclusive_start, ExclusiveStart},
+   {limit, Limit}].
 
 decode_get_item(Request) ->
     Attributes = lists:map(fun(X) -> binary:bin_to_list(X) end, kvc:path("AttributesToGet", Request)),
@@ -47,7 +53,7 @@ encode_get_item_response(Response) ->
                                         {<<"NS">>,[<<"string">>]},
                                         {<<"S">>,<<"string">>},
                                         {<<"SS">>,[<<"string">>]}]}}]}}]},
-                    
+
     mochijson2:encode(Data).
 
 decode_put_item(Json) ->
@@ -57,7 +63,7 @@ decode_put_item(Json) ->
     ReturnConsumedCapacity = kvc:path("ReturnConsumedCapacity", Json),
     ReturnItemCollectionMetrics = kvc:path("ReturnItemCollectionMetrics", Json),
     ReturnValues = kvc:path("ReturnValues", Json),
-    
+
     [{expected, Expected},
      {item, Item},
      {return_consumed_capacity, ReturnConsumedCapacity},
@@ -144,7 +150,7 @@ decode_query(Request) ->
     ScanIndexForward = binary:bin_to_list(kvc:path("ScanIndexForward", Request)),
     Select = binary:bin_to_list(kvc:path("Select", Request)),
     TableName = binary:bin_to_list(kvc:path("TableName", Request)),
-    
+
     [{"AttributesToGet", AttributesToGet},
      {"ConsistentRead", ConsistentRead},
      {"ExclusiveStartKey", ExclusiveStartKey},
@@ -261,7 +267,7 @@ decode_2i([Index|Rest], Acc) ->
 decode_2i_key_schema([], Acc) ->
     Acc;
 decode_2i_key_schema([Attribute|Rest], Acc) ->
-    decode_2i_key_schema(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)}, 
+    decode_2i_key_schema(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
                                 {<<"KeyType">>, kvc:path("KeyType", Attribute)} | Acc]).
 
 decode_key_conditions([], Acc) ->
@@ -302,7 +308,7 @@ decode_get_item_test() ->
         \"string\"
     ],
     \"ConsistentRead\": \"boolean\",
-    \"Key\": 
+    \"Key\":
         {
             \"key1\" : {\"B\": \"blob\"},
             \"key2\" : {\"BS\": [\"blob\"]},
@@ -502,7 +508,7 @@ decode_create_table_test() ->
                 {key_schema, [
                   {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
                 ]},
-                {lsi, [[{<<"2i_name">>, 
+                {lsi, [[{<<"2i_name">>,
                         [{key_schema, [
                           {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
                         ]},
@@ -532,7 +538,7 @@ decode_delete_table_test() ->
 %             \"string\"
 %         ],
 %         \"ConsistentRead\": \"boolean\",
-%         \"ExclusiveStartKey\": 
+%         \"ExclusiveStartKey\":
 %             {
 %                 \"Key1\": {\"B\": \"blob\"},
 %                 \"Key2\": {\"BS\": [\"blob\"]},
@@ -542,7 +548,7 @@ decode_delete_table_test() ->
 %                 \"Key6\": {\"SS\": [\"string\"]}
 %             },
 %         \"IndexName\": \"string\",
-%         \"KeyConditions\": 
+%         \"KeyConditions\":
 %             {
 %                 \"Key1\": {
 %                     \"AttributeValueList\": [{\"B\": \"blob\"}],
@@ -636,5 +642,3 @@ decode_scan_test() ->
     ?assertEqual(Expected, Actual).
 
 -endif.
-
-
