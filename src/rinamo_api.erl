@@ -95,7 +95,7 @@ delete_table(DynamoRequest, AWSContext) ->
 % ---- Put Item ---- %
 
 put_item(DynamoRequest, AWSContext) ->
-  [ {_, Expected}, {_, Item}, {return_consumed_capacity, _},
+  [ {_, Expected}, {item, _}, {_, RawItem}, {return_consumed_capacity, _},
     {return_item_collection_metrics, _}, {return_values, _},
     {tablename, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
@@ -103,7 +103,7 @@ put_item(DynamoRequest, AWSContext) ->
     [] -> table_missing;
     _ ->
       % TODO: We can make this async later, result can be dropped.
-      _ = rinamo_items:put_item(TableName, Item, AWSContext),
+      _ = rinamo_items:put_item(TableName, RawItem, AWSContext),
       [{}]
   end.
 
@@ -197,21 +197,22 @@ describe_table_test() ->
 
 put_item_test() ->
   TableDef = jsx:decode(table_fixture()),
-  meck:new(rinamo_tables, [non_strict, passthrough]),
+  meck:new([rinamo_tables, rinamo_items], [non_strict, passthrough]),
   meck:expect(rinamo_tables, load_table_def, 2, TableDef),
+  meck:expect(rinamo_items, put_item, 3, ok),
 
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
-  PutItem = jsx:decode(item_fixture()),
-  [_, PutItemNoTable] = PutItem,
+  PutItemRequest = jsx:decode(item_fixture()),
+  [_, PutItemRequestNoTable] = PutItemRequest,
 
-  R1 = rinamo_api:put_item(PutItemNoTable, AWSContext),
+  R1 = rinamo_api:put_item(PutItemRequestNoTable, AWSContext),
   io:format("Actual ~p", [R1]),
   ?assertEqual(table_missing, R1),
 
-  R2 = rinamo_api:put_item(PutItem, AWSContext),
+  R2 = rinamo_api:put_item(PutItemRequest, AWSContext),
   io:format("Actual ~p", [R2]),
   ?assertEqual([{}], R2),
 
-  meck:unload(rinamo_tables).
+  meck:unload([rinamo_tables, rinamo_items]).
 
 -endif.

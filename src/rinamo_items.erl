@@ -9,34 +9,37 @@
 -endif.
 
 -spec put_item(binary(), any(), #ctx{ user_key :: binary() }) -> ok.
-put_item(Table, Item, AWSContext) ->
+put_item(Table, RawItem, AWSContext) ->
   UserKey = AWSContext#ctx.user_key,
   {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
-  {FieldType, KeyValue} = kvc:path(KeyAttribute, Item),
+  [{FieldType, KeyValue}] = kvc:path(KeyAttribute, RawItem),
 
   lager:debug("KeyAttribute: ~p, KeyType: ~p, FieldType: ~p, KeyValue: ~p",
               [KeyAttribute, KeyType, FieldType, KeyValue]),
 
   case KeyType of
-    <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, Item);
+    <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, RawItem);
     <<"RANGE">> -> ok
   end.
 
 %% Internal
 
 -spec store_hash_key(binary(), binary(), [binary()], binary()) -> ok.
-store_hash_key(User, Table, [], Value) ->
+store_hash_key(User, Table, [], RawItem) ->
   ok;
-store_hash_key(User, Table, [Key|Rest], Value) ->
-  store_hash_key(User, Table, Rest, Value),
-  store_hash_key(User, Table, Key, Value);
-store_hash_key(User, Table, Key, Value) ->
+store_hash_key(User, Table, [Key|Rest], RawItem) ->
+  store_hash_key(User, Table, Rest, RawItem),
+  store_hash_key(User, Table, Key, RawItem);
+store_hash_key(User, Table, Key, RawItem) ->
   lager:debug("Storing: ~p:", [Key]),
 
-  % TODO: Create PutItem Data Model & Save
-  % Bucket:  UserKey + Table
-  % Key: KeyValue if KeyType == <<"HASH">>
-  % Value: Item (json blob it)
+  B = erlang:iolist_to_binary([User, ?RINAMO_SEPARATOR, Table]),
+  Value = jsx:encode(RawItem),
+
+  _ = rinamo_kv:put(
+  rinamo_kv:client(),
+  B, Key, Value,
+  "application/json"),
 
   ok.
 
@@ -63,14 +66,16 @@ item_fixture() ->
   Fixture.
 
 put_item_test() ->
-  meck:new(rinamo_tables, [non_strict]),
+  meck:new([rinamo_tables, rinamo_kv], [non_strict]),
   meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(table_fixture())),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, put, 5, ok),
 
   Table = <<"TableName">>,
-  Item = kvc:path(item, rinamo_codec:decode_put_item(jsx:decode(item_fixture()))),
+  Item = kvc:path("Item", jsx:decode(item_fixture())),
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   _ = put_item(Table, Item, AWSContext),
 
-  meck:unload([rinamo_tables]).
+  meck:unload([rinamo_tables, rinamo_kv]).
 
 -endif.

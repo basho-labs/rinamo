@@ -46,7 +46,7 @@ public class ItemOperationsITCase extends DynamoDBTest {
   @Test
   public void putItemTest() {
     Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-//    item.put("Id", new AttributeValue().withSS(Arrays.asList("1", "2", "3")));
+    // Key datatypes must be scalars, not sets
     item.put("Id", new AttributeValue().withN("101"));
     item.put("Title", new AttributeValue().withS("Book 101 Title"));
     item.put("ISBN", new AttributeValue().withS("111-1111111111"));
