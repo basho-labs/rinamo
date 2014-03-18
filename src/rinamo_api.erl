@@ -59,7 +59,7 @@ list_tables(DynamoRequest, AWSContext) ->
       [{ <<"TableNames">>, Result }]
   end.
 
--spec filter_table_list([binary()], any(), integer()) -> {[binary()], binary()}.
+-spec filter_table_list([binary()], any(), integer()) -> {[binary()], boolean()}.
 filter_table_list(TableList, [], Limit) ->
   filter_table_list(TableList, Limit);
 filter_table_list(TableList, ExclusiveStart, Limit) when is_binary(ExclusiveStart) ->
