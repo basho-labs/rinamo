@@ -10,6 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
@@ -60,14 +61,18 @@ public class ItemOperationsITCase extends DynamoDBTest {
     PutItemResult result = client.putItem(pir);
     assertNotNull(result);
   }
-  
-  @Test
-  public void putItemNoTableTest() {
-    Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
 
-    PutItemRequest pir = new PutItemRequest().withItem(item);    
-    PutItemResult result = client.putItem(pir);
-    assertNotNull(result);
+  @Test
+  public void putItemExplodesIfNoTableTest() {
+    Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
+    PutItemRequest pir = new PutItemRequest().withItem(item);
+    Throwable expected = null;
+    try {
+      PutItemResult result = client.putItem(pir);
+      assertNotNull(result);
+    }
+    catch(AmazonServiceException e) { expected = e; }
+    assertNotNull(expected);
   }
 
 }
