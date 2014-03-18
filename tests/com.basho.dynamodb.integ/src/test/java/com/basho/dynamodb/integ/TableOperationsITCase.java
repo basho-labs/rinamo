@@ -44,42 +44,44 @@ public class TableOperationsITCase extends DynamoDBTest {
   
   @Test
   public void listMultipleTablesTest() {
+    int count = 5;
     try {
-      client.createTable(createHashKeyNTable("one", "One-Id", 10L, 5L));
-      client.createTable(createHashKeyNTable("two", "Two-Id", 10L, 5L));
-      client.createTable(createHashKeyNTable("three", "Three-Id", 10L, 5L));
-
-      // tables created?
-      await().atMost(5, SECONDS).until(tableExists("one"));
-      await().atMost(5, SECONDS).until(tableExists("two"));
-      await().atMost(5, SECONDS).until(tableExists("three"));
-      
-      // each table in list?
-      await().atMost(5, SECONDS).until(tableInList("one"));
-      await().atMost(5, SECONDS).until(tableInList("two"));
-      await().atMost(5, SECONDS).until(tableInList("three"));
+      createAndTest(count);
 
       ListTablesResult result = client.listTables();
+      assertEquals(count, result.getTableNames().size());
+
+      result = client.listTables(3);
       assertEquals(3, result.getTableNames().size());
-
-      result = client.listTables(1);
+      assertEquals("key_2", result.getLastEvaluatedTableName());
+      
+      result = client.listTables("key_1", 1);
       assertEquals(1, result.getTableNames().size());
-
-      // TODO: Passes on DynamoDB; not on Rinamo
-      //ListTablesResult result = client.listTables("one", 1);
-      //assertEquals(1, result.getTableNames().size());
-      //assertEquals("three", result.getLastEvaluatedTableName());
+      assertEquals("key_2", result.getTableNames().get(0));
+      assertEquals("key_2", result.getLastEvaluatedTableName());
     }
     finally {
-      client.deleteTable("one");
-      await().atMost(5, SECONDS).until(tableDoesNotExist("one"));
-
-      client.deleteTable("two");
-      await().atMost(5, SECONDS).until(tableDoesNotExist("two"));
-
-      client.deleteTable("three");
-      await().atMost(5, SECONDS).until(tableDoesNotExist("three"));
+      delete(count);
+    }
+  }
+  
+  private void createAndTest(int times) {
+    for (int i = 0; i < times; i++) {
+      client.createTable(
+        createHashKeyNTable("key_" + Integer.toString(i), i + "-Id", 10L, 5L));
     }
     
+    for (int i = 0; i < times; i++) {
+      await().atMost(5, SECONDS).until(tableExists("key_" + Integer.toString(i)));
+      await().atMost(5, SECONDS).until(tableInList("key_" + Integer.toString(i)));
+    }
   }
+  
+  private void delete(int times) {
+    for (int i = 0; i < times; i++) {
+      client.deleteTable("key_" + Integer.toString(i));
+      await().atMost(5, SECONDS).until(tableDoesNotExist("key_" + Integer.toString(i)));
+    }
+  }
+  
 }

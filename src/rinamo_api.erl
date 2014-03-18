@@ -12,6 +12,8 @@
 
 %%% Table Operations %%%
 
+% ---- Create Table ---- %
+
 create_table(DynamoRequest, AWSContext) ->
   [ {_, Table}, {_, Fields}, {_, KeySchema}, {_, LSI},
     {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
@@ -41,20 +43,37 @@ create_table(DynamoRequest, AWSContext) ->
       table_exists
   end.
 
+% ---- List Tables ---- %
+
 list_tables(DynamoRequest, AWSContext) ->
   [ {_, ExclusiveStart},
     {_, Limit} ] = rinamo_codec:decode_list_tables(DynamoRequest),
   lager:debug("ExclusiveStart: ~p, Limit: ~p~n", [ExclusiveStart, Limit]),
   TableList = rinamo_tables:list_tables(AWSContext),
-  { Result, LastEval } = filter_table_list(TableList, Limit),
-  [{ <<"TableNames">>, Result }, { <<"LastEvaluatedTableName">>, LastEval }].
+  { Result, AnyRemain } = filter_table_list(TableList, ExclusiveStart, Limit),
+  case AnyRemain of
+    true ->
+      [{ <<"TableNames">>, Result },
+       { <<"LastEvaluatedTableName">>, lists:last(Result) }];
+    false ->
+      [{ <<"TableNames">>, Result }]
+  end.
 
--spec filter_table_list([binary()], integer()) -> {[binary()], binary()}.
-filter_table_list(TableList, Limit) when is_integer(Limit), Limit >= 0 ->
+-spec filter_table_list([binary()], any(), integer()) -> {[binary()], binary()}.
+filter_table_list(TableList, [], Limit) ->
+  filter_table_list(TableList, Limit);
+filter_table_list(TableList, ExclusiveStart, Limit) when is_binary(ExclusiveStart) ->
+  {_, [_ | Rest]} = lists:splitwith(fun(X) -> X /= ExclusiveStart end, TableList),
+  filter_table_list(Rest, Limit).
+
+-spec filter_table_list([binary()], integer()) -> {[binary()], boolean()}.
+filter_table_list(TableList, Limit) when is_integer(Limit), Limit >= 0, Limit < length(TableList) ->
   { Filtered, Rest } = lists:split(Limit, TableList),
-  { Filtered, lists:last(Filtered) };
+  { Filtered, true };
 filter_table_list(TableList, Limit) ->
-  { TableList, lists:last(TableList) }.
+  { TableList, false }.
+
+% ---- Describe Table ---- %
 
 describe_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
@@ -64,12 +83,16 @@ describe_table(DynamoRequest, AWSContext) ->
     _ -> [{ <<"Table">>, Result }]
   end.
 
+% ---- Delete Table ---- %
+
 delete_table(DynamoRequest, AWSContext) ->
   [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
   Result = rinamo_tables:delete_table(Table, AWSContext),
   [{ <<"TableDescription">>, Result }].
 
 %%% Item Operations %%%
+
+% ---- Put Item ---- %
 
 put_item(DynamoRequest, AWSContext) ->
   [ {_, Expected}, {_, Item}, {return_consumed_capacity, _},
@@ -125,18 +148,36 @@ create_table_test() ->
 
   meck:unload(rinamo_tables).
 
-list_tables_test() ->
+list_tables_with_exclusive_start_test() ->
   meck:new(rinamo_tables, [non_strict, passthrough]),
-  meck:expect(rinamo_tables, list_tables, 1, [<<"Table_1">>, <<"Table_2">>]),
+  meck:expect(rinamo_tables, list_tables, 1, [<<"Table_1">>, <<"Table_2">>,
+                                              <<"Table_3">>, <<"Table_4">>]),
 
-  Input = <<"{\"Limit\":2}">>,
+  Input = <<"{\"ExclusiveStartTableName\":\"Table_1\", \"Limit\":2}">>,
   AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
   Actual = rinamo_api:list_tables(jsx:decode(Input), AWSContext),
   io:format("Actual ~p", [Actual]),
-  [{<<"TableNames">>, [R0, R1]},
-   {<<"LastEvaluatedTableName">>, R1}] = Actual,
-  ?assertEqual(<<"Table_1">>, R0),
-  ?assertEqual(<<"Table_2">>, R1),
+  [{<<"TableNames">>, [T2, T3]},
+   {<<"LastEvaluatedTableName">>, T3}] = Actual,
+  ?assertEqual(<<"Table_2">>, T2),
+  ?assertEqual(<<"Table_3">>, T3),
+
+  meck:unload(rinamo_tables).
+
+list_tables_test() ->
+  meck:new(rinamo_tables, [non_strict, passthrough]),
+  meck:expect(rinamo_tables, list_tables, 1, [<<"Table_1">>, <<"Table_2">>,
+                                              <<"Table_3">>, <<"Table_4">>]),
+
+  Input = <<"{}">>,
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  Actual = rinamo_api:list_tables(jsx:decode(Input), AWSContext),
+  io:format("Actual ~p", [Actual]),
+  [{<<"TableNames">>, [T1, T2, T3, T4]}] = Actual,
+  ?assertEqual(<<"Table_1">>, T1),
+  ?assertEqual(<<"Table_2">>, T2),
+  ?assertEqual(<<"Table_3">>, T3),
+  ?assertEqual(<<"Table_4">>, T4),
 
   meck:unload(rinamo_tables).
 
@@ -172,7 +213,5 @@ put_item_test() ->
   ?assertEqual([{}], R2),
 
   meck:unload(rinamo_tables).
-
-
 
 -endif.
