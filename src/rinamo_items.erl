@@ -9,32 +9,32 @@
 -endif.
 
 -spec put_item(binary(), any(), #ctx{ user_key :: binary() }) -> ok.
-put_item(Table, RawItem, AWSContext) ->
+put_item(Table, Item, AWSContext) ->
   UserKey = AWSContext#ctx.user_key,
   {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
-  [{FieldType, KeyValue}] = kvc:path(KeyAttribute, RawItem),
+  [{FieldType, KeyValue}] = kvc:path(KeyAttribute, Item),
 
   lager:debug("KeyAttribute: ~p, KeyType: ~p, FieldType: ~p, KeyValue: ~p",
               [KeyAttribute, KeyType, FieldType, KeyValue]),
 
   case KeyType of
-    <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, RawItem);
+    <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, Item);
     <<"RANGE">> -> ok
   end.
 
 %% Internal
 
 -spec store_hash_key(binary(), binary(), [binary()], binary()) -> ok.
-store_hash_key(User, Table, [], RawItem) ->
+store_hash_key(User, Table, [], Item) ->
   ok;
-store_hash_key(User, Table, [Key|Rest], RawItem) ->
-  store_hash_key(User, Table, Rest, RawItem),
-  store_hash_key(User, Table, Key, RawItem);
-store_hash_key(User, Table, Key, RawItem) ->
+store_hash_key(User, Table, [Key|Rest], Item) ->
+  store_hash_key(User, Table, Rest, Item),
+  store_hash_key(User, Table, Key, Item);
+store_hash_key(User, Table, Key, Item) ->
   lager:debug("Storing: ~p:", [Key]),
 
   B = erlang:iolist_to_binary([User, ?RINAMO_SEPARATOR, Table]),
-  Value = jsx:encode(RawItem),
+  Value = jsx:encode(Item),
 
   _ = rinamo_kv:put(
   rinamo_kv:client(),
