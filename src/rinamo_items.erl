@@ -22,6 +22,7 @@ put_item(Table, Item, AWSContext) ->
     <<"RANGE">> -> ok
   end.
 
+-spec get_item(binary(), binary(), #ctx{ user_key :: binary() }) -> any().
 get_item(Table, Key, AWSContext) ->
   UserKey = AWSContext#ctx.user_key,
   B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
