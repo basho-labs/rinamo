@@ -97,7 +97,7 @@ delete_table(DynamoRequest, AWSContext) ->
 put_item(DynamoRequest, AWSContext) ->
   [ {_, Expected}, {_, Item}, {return_consumed_capacity, _},
     {return_item_collection_metrics, _}, {return_values, _},
-    {tablename, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
+    {_, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
   case TableName of
     [] -> table_missing;

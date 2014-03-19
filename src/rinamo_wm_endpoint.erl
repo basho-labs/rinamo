@@ -136,7 +136,8 @@ format_error_message(Type, Message) ->
 -ifdef(TEST).
 
 auth_fixture() ->
-  "AWS4-HMAC-SHA256 Credential=RANDY_ACCESS_KEY/20140224/us-east-1/dynamodb/aws4_request, SignedHeaders=content-length;content-type;host;user-agent;x-amz-date;x-amz-target, Signature=81f71d83f35b3b2be9589f9ec0f5edca95b14d602f639b183e729d1fd1e3308c".
+  {_, Fixture} = file:read_file("../tests/fixtures/access_key.txt"),
+  binary:bin_to_list(Fixture).
 
 dynamo_user_test() ->
   Input = auth_fixture(),
