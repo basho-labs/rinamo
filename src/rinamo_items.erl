@@ -1,6 +1,6 @@
 -module(rinamo_items).
 
--export([put_item/3]).
+-export([put_item/3, get_item/3]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -20,6 +20,20 @@ put_item(Table, Item, AWSContext) ->
   case KeyType of
     <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, Item);
     <<"RANGE">> -> ok
+  end.
+
+get_item(Table, Key, AWSContext) ->
+  UserKey = AWSContext#ctx.user_key,
+  B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
+
+  {_, Item_V} = rinamo_kv:get(
+    rinamo_kv:client(), B, Key
+  ),
+
+  case Item_V of
+    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes);
+    notfound -> notfound;
+    _ -> jsx:decode(Item_V)
   end.
 
 %% Internal
@@ -77,5 +91,20 @@ put_item_test() ->
   _ = put_item(Table, Item, AWSContext),
 
   meck:unload([rinamo_tables, rinamo_kv]).
+
+get_item_test() ->
+  meck:new(rinamo_kv, [non_strict]),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, get, 3, {value, <<"[\"Some_Item_Def_JSON_Here\"]">>}),
+
+  Table = <<"Item Table">>,
+  Key = <<"Some_Item_Key">>,
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  Actual = get_item(Table, Key, AWSContext),
+  Expected = [<<"Some_Item_Def_JSON_Here">>],
+  ?assertEqual(Expected, Actual),
+
+  meck:unload(rinamo_kv).
 
 -endif.

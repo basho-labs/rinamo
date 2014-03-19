@@ -2,7 +2,7 @@
 
 -export([create_table/2, list_tables/2,
          describe_table/2, delete_table/2,
-         put_item/2]).
+         put_item/2, get_item/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -107,6 +107,22 @@ put_item(DynamoRequest, AWSContext) ->
       [{}]
   end.
 
+% ---- Get Item ---- %
+
+get_item(DynamoRequest, AWSContext) ->
+  [{_, AttributesToGet}, {_,ConsistentRead},
+   {_, Keys}, {_, ReturnConsumeCapacity},
+   {_, TableName}] = rinamo_codec:decode_get_item(DynamoRequest),
+
+  % assume for now they pass in the right
+  % KeyAttribute & KeyType ("Id", "N")
+  [{_, {_, Key}}] = Keys,
+
+  Item = rinamo_items:get_item(TableName, Key, AWSContext),
+
+  [{ <<"Item">>, Item }].
+
+
 -ifdef(TEST).
 
 table_fixture() ->
@@ -115,6 +131,14 @@ table_fixture() ->
 
 item_fixture() ->
   {_, Fixture} = file:read_file("../tests/fixtures/item.json"),
+  Fixture.
+
+get_request_fixture() ->
+  {_, Fixture} = file:read_file("../tests/fixtures/get_item_request.json"),
+  Fixture.
+
+get_response_fixture() ->
+  {_, Fixture} = file:read_file("../tests/fixtures/get_item_response.json"),
   Fixture.
 
 create_table_test() ->
@@ -214,5 +238,23 @@ put_item_test() ->
   ?assertEqual([{}], R2),
 
   meck:unload([rinamo_tables, rinamo_items]).
+
+get_item_test() ->
+  ItemWithTable = jsx:decode(item_fixture()),
+  Item = kvc:path("Item", ItemWithTable),
+
+  meck:new(rinamo_items, [non_strict, passthrough]),
+  meck:expect(rinamo_items, get_item, 3, Item),
+
+  Expected = [{<<"Item">>, Item}],
+
+  GetItemRequest = jsx:decode(get_request_fixture()),
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  R0 = rinamo_api:get_item(GetItemRequest, AWSContext),
+  io:format("Actual ~p", [R0]),
+  ?assertEqual(Expected, R0),
+
+  meck:unload(rinamo_items).
 
 -endif.

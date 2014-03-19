@@ -1,7 +1,8 @@
 -module(rinamo_codec).
 
 -export([decode_create_table/1, decode_table_name/1,
-         decode_list_tables/1, decode_put_item/1]).
+         decode_list_tables/1, decode_put_item/1,
+         decode_get_item/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -26,11 +27,11 @@ decode_get_item(Request) ->
     Keys = decode_keys(KeyValues, []),
     ReturnConsumedCapacity = kvc:path("ReturnConsumedCapacity", Request),
     TableName = kvc:path("TableName", Request),
-    [{"AttributesToGet", Attributes},
-     {"ConsistentRead", ConsistentRead},
-     {"Keys", Keys},
-     {"ReturnConsumedCapacity", ReturnConsumedCapacity},
-     {"TableName", TableName}].
+    [{attributes_to_get, Attributes},
+     {consistent_read, ConsistentRead},
+     {keys, Keys},
+     {return_consumed_capacity, ReturnConsumedCapacity},
+     {tablename, TableName}].
 
 decode_put_item(Json) ->
     TableName = kvc:path("TableName", Json),
@@ -198,7 +199,7 @@ decode_get_item_test() ->
     \"AttributesToGet\": [
       \"string\"
     ],
-    \"ConsistentRead\": \"boolean\",
+    \"ConsistentRead\": false,
     \"Key\":
       {
           \"key1\" : {\"B\": \"blob\"},
@@ -214,16 +215,16 @@ decode_get_item_test() ->
     Actual = decode_get_item(jsx:decode(Json_Bin)),
     io:format("~p", [Actual]),
 
-    Expected = [{"AttributesToGet",[<<"string">>]},
-                {"ConsistentRead",<<"boolean">>},
-                {"Keys", [{"key1",{<<"B">>,<<"blob">>}},
+    Expected = [{attributes_to_get,[<<"string">>]},
+                {consistent_read,false},
+                {keys, [{"key1",{<<"B">>,<<"blob">>}},
                           {"key2",{<<"BS">>,[<<"blob">>]}},
                           {"key3",{<<"N">>,<<"string">>}},
                           {"key4",{<<"NS">>,[<<"string">>]}},
                           {"key5",{<<"S">>,<<"string">>}},
                           {"key6",{<<"SS">>,[<<"string">>]}}]},
-                {"ReturnConsumedCapacity",<<"string">>},
-                {"TableName",<<"string">>}],
+                {return_consumed_capacity,<<"string">>},
+                {tablename,<<"string">>}],
 
     ?assertEqual(Expected, Actual).
 

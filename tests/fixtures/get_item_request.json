@@ -1,0 +1,9 @@
+{
+  "TableName":"ItemOpsTestTable",
+  "Key": {
+    "Id": {
+      "N":"101"
+    }
+  },
+  "ConsistentRead":false
+}
