@@ -76,7 +76,7 @@ filter_table_list(TableList, Limit) ->
 % ---- Describe Table ---- %
 
 describe_table(DynamoRequest, AWSContext) ->
-  [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
+  [ {_, Table} ] = rinamo_codec:decode_table_name(DynamoRequest),
   Result = rinamo_tables:load_table_def(Table, AWSContext),
   case Result of
     notfound -> throw(table_missing);
@@ -86,7 +86,7 @@ describe_table(DynamoRequest, AWSContext) ->
 % ---- Delete Table ---- %
 
 delete_table(DynamoRequest, AWSContext) ->
-  [ {_, Table} ] = rinamo_codec:decode_describe_table(DynamoRequest),
+  [ {_, Table} ] = rinamo_codec:decode_table_name(DynamoRequest),
   Result = rinamo_tables:delete_table(Table, AWSContext),
   [{ <<"TableDescription">>, Result }].
 
@@ -95,7 +95,7 @@ delete_table(DynamoRequest, AWSContext) ->
 % ---- Put Item ---- %
 
 put_item(DynamoRequest, AWSContext) ->
-  [ {_, Expected}, {item, _}, {_, RawItem}, {return_consumed_capacity, _},
+  [ {_, Expected}, {_, Item}, {return_consumed_capacity, _},
     {return_item_collection_metrics, _}, {return_values, _},
     {tablename, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
@@ -103,7 +103,7 @@ put_item(DynamoRequest, AWSContext) ->
     [] -> table_missing;
     _ ->
       % TODO: We can make this async later, result can be dropped.
-      _ = rinamo_items:put_item(TableName, RawItem, AWSContext),
+      _ = rinamo_items:put_item(TableName, Item, AWSContext),
       [{}]
   end.
 
