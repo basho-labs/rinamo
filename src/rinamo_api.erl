@@ -2,7 +2,7 @@
 
 -export([create_table/2, list_tables/2,
          describe_table/2, delete_table/2,
-         put_item/2, get_item/2]).
+         put_item/2, get_item/2, delete_item/2]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -15,7 +15,7 @@
 % ---- Create Table ---- %
 
 create_table(DynamoRequest, AWSContext) ->
-  [ {_, Table}, {_, Fields}, {_, KeySchema}, {_, LSI},
+  [ {_, Table}, {_, Fields}, {_, KeySchema}, {lsi, _},
     {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
 
   {MegaSecs, Secs, MicroSecs} = now(),
@@ -68,9 +68,9 @@ filter_table_list(TableList, ExclusiveStart, Limit) when is_binary(ExclusiveStar
 
 -spec filter_table_list([binary()], integer()) -> {[binary()], boolean()}.
 filter_table_list(TableList, Limit) when is_integer(Limit), Limit >= 0, Limit < length(TableList) ->
-  { Filtered, Rest } = lists:split(Limit, TableList),
+  { Filtered, _ } = lists:split(Limit, TableList),
   { Filtered, true };
-filter_table_list(TableList, Limit) ->
+filter_table_list(TableList, _) ->
   { TableList, false }.
 
 % ---- Describe Table ---- %
@@ -95,7 +95,7 @@ delete_table(DynamoRequest, AWSContext) ->
 % ---- Put Item ---- %
 
 put_item(DynamoRequest, AWSContext) ->
-  [ {_, Expected}, {_, Item}, {return_consumed_capacity, _},
+  [ {expected, _}, {_, Item}, {return_consumed_capacity, _},
     {return_item_collection_metrics, _}, {return_values, _},
     {_, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
@@ -110,9 +110,9 @@ put_item(DynamoRequest, AWSContext) ->
 % ---- Get Item ---- %
 
 get_item(DynamoRequest, AWSContext) ->
-  [{_, AttributesToGet}, {_,ConsistentRead},
-   {_, Keys}, {_, ReturnConsumeCapacity},
-   {_, TableName}] = rinamo_codec:decode_get_item(DynamoRequest),
+  [{attributes_to_get, _}, {consistent_read, _},
+   {_, Keys}, {return_consumed_capacity, _},
+   {_, TableName}] = rinamo_codec:decode_item_request(DynamoRequest),
 
   % assume for now they pass in the right
   % KeyAttribute & KeyType ("Id", "N")
@@ -122,6 +122,18 @@ get_item(DynamoRequest, AWSContext) ->
 
   [{ <<"Item">>, Item }].
 
+% ---- Delete Item ---- %
+
+delete_item(DynamoRequest, AWSContext) ->
+  [{attributes_to_get, _}, {consistent_read, _},
+   {_, Keys}, {return_consumed_capacity, _},
+   {_, TableName}] = rinamo_codec:decode_item_request(DynamoRequest),
+
+  [{_, {_, Key}}] = Keys,
+
+  rinamo_items:delete_item(TableName, Key, AWSContext),
+
+  [{}].
 
 -ifdef(TEST).
 
@@ -135,10 +147,6 @@ item_fixture() ->
 
 get_request_fixture() ->
   {_, Fixture} = file:read_file("../tests/fixtures/get_item_request.json"),
-  Fixture.
-
-get_response_fixture() ->
-  {_, Fixture} = file:read_file("../tests/fixtures/get_item_response.json"),
   Fixture.
 
 create_table_test() ->
@@ -169,6 +177,7 @@ create_table_test() ->
   ?assertEqual([{}], GSI),
   ?assertEqual(0, TableSize),
   ?assert(CreationDateTime > 0),
+  ?assertEqual(<<"CREATING">>, TableStatus),
 
   meck:unload(rinamo_tables).
 
@@ -256,5 +265,20 @@ get_item_test() ->
   ?assertEqual(Expected, R0),
 
   meck:unload(rinamo_items).
+
+delete_item_test() ->
+  meck:new(rinamo_items, [non_strict, passthrough]),
+  meck:expect(rinamo_items, delete_item, 3, ok),
+  Expected = [{}],
+
+  DeleteItemRequest = jsx:decode(get_request_fixture()),
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  R0 = rinamo_api:delete_item(DeleteItemRequest, AWSContext),
+  io:format("Actual ~p", [R0]),
+  ?assertEqual(Expected, R0),
+
+  meck:unload(rinamo_items).
+
 
 -endif.

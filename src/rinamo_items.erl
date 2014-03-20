@@ -1,6 +1,6 @@
 -module(rinamo_items).
 
--export([put_item/3, get_item/3]).
+-export([put_item/3, get_item/3, delete_item/3]).
 
 -include_lib("rinamo/include/rinamo.hrl").
 
@@ -36,6 +36,17 @@ get_item(Table, Key, AWSContext) ->
     notfound -> notfound;
     _ -> jsx:decode(Item_V)
   end.
+
+-spec delete_item(binary(), binary(), #ctx{ user_key :: binary() }) -> ok.
+delete_item(Table, Key, AWSContext) ->
+  UserKey = AWSContext#ctx.user_key,
+  B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
+
+  _ = rinamo_kv:delete(
+    rinamo_kv:client(), B, Key
+  ),
+
+  ok.
 
 %% Internal
 
@@ -107,5 +118,21 @@ get_item_test() ->
   ?assertEqual(Expected, Actual),
 
   meck:unload(rinamo_kv).
+
+delete_item_test() ->
+  meck:new(rinamo_kv, [non_strict]),
+  meck:expect(rinamo_kv, client, 0, ok),
+  meck:expect(rinamo_kv, delete, 3, {value, <<"[\"Some_Item_Def_JSON_Here\"]">>}),
+
+  Table = <<"Item Table">>,
+  Key = <<"Some_Item_Key">>,
+  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+
+  Actual = delete_item(Table, Key, AWSContext),
+  Expected = ok,
+  ?assertEqual(Expected, Actual),
+
+  meck:unload(rinamo_kv).
+
 
 -endif.

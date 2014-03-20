@@ -70,7 +70,7 @@ accept_json(ReqData, Context) ->
     "GetItem" -> {rinamo_api, get_item};
     "PutItem" -> {rinamo_api, put_item};
     "UpdateItem" -> {error, unimplemented};
-    "DeleteItem" -> {error, unimplemented};
+    "DeleteItem" -> {rinamo_api, delete_item};
     "Query" -> {error, unimplemented};
     "Scan" -> {error, unimplemented};
     "BatchGetItem" -> {error, unimplemented};

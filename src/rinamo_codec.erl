@@ -2,16 +2,16 @@
 
 -export([decode_create_table/1, decode_table_name/1,
          decode_list_tables/1, decode_put_item/1,
-         decode_get_item/1]).
+         decode_item_request/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-decode_batch_get_item(Request) ->
+decode_batch_get_item(Json) ->
   ok.
 
-decode_batch_write_item(Request) ->
+decode_batch_write_item(Json) ->
   ok.
 
 decode_list_tables(Json) ->
@@ -20,13 +20,13 @@ decode_list_tables(Json) ->
   [{exclusive_start, ExclusiveStart},
    {limit, Limit}].
 
-decode_get_item(Request) ->
-    Attributes = kvc:path("AttributesToGet", Request),
-    ConsistentRead = kvc:path("ConsistentRead", Request),
-    KeyValues = kvc:path("Key", Request),
+decode_item_request(Json) ->
+    Attributes = kvc:path("AttributesToGet", Json),
+    ConsistentRead = kvc:path("ConsistentRead", Json),
+    KeyValues = kvc:path("Key", Json),
     Keys = decode_keys(KeyValues, []),
-    ReturnConsumedCapacity = kvc:path("ReturnConsumedCapacity", Request),
-    TableName = kvc:path("TableName", Request),
+    ReturnConsumedCapacity = kvc:path("ReturnConsumedCapacity", Json),
+    TableName = kvc:path("TableName", Json),
     [{attributes_to_get, Attributes},
      {consistent_read, ConsistentRead},
      {keys, Keys},
@@ -48,10 +48,10 @@ decode_put_item(Json) ->
      {return_values, ReturnValues},
      {tablename, TableName}].
 
-decode_update_item(Request) ->
+decode_update_item(Json) ->
     ok.
 
-decode_delete_item(Request) ->
+decode_delete_item(Json) ->
     ok.
 
 decode_table_name(Json) ->
@@ -73,26 +73,25 @@ decode_create_table(Json) ->
      {provisioned_throughput, ProvisionedThroughput},
      {raw_schema, Json}].
 
-decode_update_table(Request) ->
+decode_update_table(Json) ->
     ok.
 
-decode_query(Request) ->
-    AttributesToGet = lists:map(fun(X) -> binary:bin_to_list(X) end, kvc:path("AttributesToGet", Request)),
-    ConsistentRead = binary:bin_to_list(kvc:path("ConsistentRead", Request)),
-    {struct, ExStartKeys} = kvc:path("ExclusiveStartKey", Request),
-    % ExclusiveStartKey = decode_put_item(ExStartKeys, []),
-    IndexName = binary:bin_to_list(kvc:path("IndexName", Request)),
-    {struct, KeyConditionsArr} = kvc:path("KeyConditions", Request),
+decode_query(Json) ->
+    AttributesToGet = kvc:path("AttributesToGet", Json),
+    ConsistentRead = kvc:path("ConsistentRead", Json),
+    ExclusiveStartKey = kvc:path("ExclusiveStartKey", Json),
+    IndexName = kvc:path("IndexName", Json),
+    KeyConditionsArr = kvc:path("KeyConditions", Json),
     KeyConditions = decode_key_conditions(KeyConditionsArr, []),
-    Limit = binary:bin_to_list(kvc:path("Limit", Request)),
-    ReturnConsumedCapacity = binary:bin_to_list(kvc:path("ReturnConsumedCapacity", Request)),
-    ScanIndexForward = binary:bin_to_list(kvc:path("ScanIndexForward", Request)),
-    Select = binary:bin_to_list(kvc:path("Select", Request)),
-    TableName = binary:bin_to_list(kvc:path("TableName", Request)),
+    Limit = kvc:path("Limit", Json),
+    ReturnConsumedCapacity = kvc:path("ReturnConsumedCapacity", Json),
+    ScanIndexForward = kvc:path("ScanIndexForward", Json),
+    Select = kvc:path("Select", Json),
+    TableName = kvc:path("TableName", Json),
 
     [{"AttributesToGet", AttributesToGet},
      {"ConsistentRead", ConsistentRead},
-     % {"ExclusiveStartKey", ExclusiveStartKey},
+     {"ExclusiveStartKey", ExclusiveStartKey},
      {"IndexName", IndexName},
      {"KeyConditions", KeyConditions},
      {"Limit", Limit},
@@ -101,7 +100,7 @@ decode_query(Request) ->
      {"Select", Select},
      {"TableName", TableName}].
 
-decode_scan(Request) ->
+decode_scan(Json) ->
     ok.
 
 %% Internal
@@ -123,7 +122,7 @@ decode_key_value([{FieldType, FieldValue}|Rest], Acc) ->
     decode_keys(Rest, [{FieldType, FieldValue}|Acc]).
 
 
-decode_put_expected([{}], Acc) ->
+decode_put_expected([{}], _) ->
     [{}];
 decode_put_expected([], Acc) ->
     lists:reverse(Acc);
@@ -165,21 +164,17 @@ decode_2i_key_schema([Attribute|Rest], Acc) ->
 decode_key_conditions([], Acc) ->
     lists:reverse(Acc);
 decode_key_conditions([Condition|Rest], Acc) ->
-    {Key, {struct, Args}} = Condition,
+    {Key, Args} = Condition,
     AttributeValues = decode_attribute_values(kvc:path("AttributeValueList", Args), []),
     ComparisonOperator = kvc:path("ComparisonOperator", Args),
-    decode_key_conditions(Rest, [{binary:bin_to_list(Key), AttributeValues, binary:bin_to_list(ComparisonOperator)}|Acc]).
+    decode_key_conditions(Rest, [{Key, AttributeValues, ComparisonOperator}|Acc]).
 
 
 decode_attribute_values([], Acc) ->
     lists:reverse(Acc);
 decode_attribute_values([Attribute|Rest], Acc) ->
-    {struct, [{Type, Value}]} = Attribute,
-    ValueList = case is_list(Value) of
-        true -> lists:map(fun(X) -> binary:bin_to_list(X) end, Value);
-        _ -> binary:bin_to_list(Value)
-    end,
-    decode_attribute_values(Rest, [{binary:bin_to_list(Type), ValueList}|Acc]).
+    [{Type, Value}] = Attribute,
+    decode_attribute_values(Rest, [{Type, Value}|Acc]).
 
 
 -ifdef(TEST).
@@ -194,7 +189,7 @@ decode_batch_write_item_test() ->
     Expected = ok,
     ?assertEqual(Expected, Actual).
 
-decode_get_item_test() ->
+decode_item_request_test() ->
     Json_Bin = <<"{
     \"AttributesToGet\": [
       \"string\"
@@ -212,7 +207,7 @@ decode_get_item_test() ->
     \"ReturnConsumedCapacity\": \"string\",
     \"TableName\": \"string\"
     }">>,
-    Actual = decode_get_item(jsx:decode(Json_Bin)),
+    Actual = decode_item_request(jsx:decode(Json_Bin)),
     io:format("~p", [Actual]),
 
     Expected = [{attributes_to_get,[<<"string">>]},
@@ -359,71 +354,73 @@ decode_update_table_test() ->
 
 
 decode_query_test() ->
-    Json = "{
-        \"AttributesToGet\": [
-            \"string\"
-        ],
-        \"ConsistentRead\": \"boolean\",
-       \"ExclusiveStartKey\":
-            {
-                \"Key1\": {\"B\": \"blob\"},
-                \"Key2\": {\"BS\": [\"blob\"]},
-                \"Key3\": {\"N\": \"string\"},
-                \"Key4\": {\"NS\": [\"string\"]},
-                \"Key5\": {\"S\": \"string\"},
-                \"Key6\": {\"SS\": [\"string\"]}
-            },
-        \"IndexName\": \"string\",
-        \"KeyConditions\":
-            {
-                \"Key1\": {
-                    \"AttributeValueList\": [{\"B\": \"blob\"}],
-                    \"ComparisonOperator\": \"string\"},
-                \"Key2\": {
-                    \"AttributeValueList\": [{\"BS\": [\"blob\"]}],
-                    \"ComparisonOperator\": \"string\"},
-                \"Key3\": {
-                    \"AttributeValueList\": [{\"N\": \"string\"}],
-                    \"ComparisonOperator\": \"string\"},
-                \"Key4\": {
-                    \"AttributeValueList\": [{\"NS\": [\"string\"]}],
-                    \"ComparisonOperator\": \"string\"},
-                \"Key5\": {
-                    \"AttributeValueList\": [{\"S\": \"string\"}],
-                    \"ComparisonOperator\": \"string\"},
-                \"Key6\": {
-                    \"AttributeValueList\": [{\"SS\": [\"string\"]}],
-                    \"ComparisonOperator\": \"string\"},
-            },
-        \"Limit\": \"number\",
-        \"ReturnConsumedCapacity\": \"string\",
-        \"ScanIndexForward\": \"boolean\",
-        \"Select\": \"string\",
-        \"TableName\": \"string\"
-        }",
-    Actual = decode_query(mochijson2:decode(Json)),
-    Expected = [{"AttributesToGet", ["string"]},
-                {"ConsistentRead", "boolean"},
-%                {"ExclusiveStartKey", [{"Key1", {"B", "blob"}},
-%                                       {"Key2", {"BS", ["blob"]}},
-%                                       {"Key3", {"N", "string"}},
-%                                       {"Key4", {"NS", ["string"]}},
-%                                       {"Key5", {"S", "string"}},
-%                                       {"Key6", {"SS", ["string"]}}]},
-                {"IndexName", "string"},
+    Json_Bin = <<"{
+      \"AttributesToGet\": [
+          \"string\"
+      ],
+      \"ConsistentRead\": false,
+      \"ExclusiveStartKey\":
+        {
+          \"Key1\": {\"B\": \"blob\"},
+          \"Key2\": {\"BS\": [\"blob\"]},
+          \"Key3\": {\"N\": \"string\"},
+          \"Key4\": {\"NS\": [\"string\"]},
+          \"Key5\": {\"S\": \"string\"},
+          \"Key6\": {\"SS\": [\"string\"]}
+        },
+      \"IndexName\": \"string\",
+      \"KeyConditions\":
+        {
+          \"Key1\": {
+            \"AttributeValueList\": [{\"B\": \"blob\"}],
+            \"ComparisonOperator\": \"string\"},
+          \"Key2\": {
+            \"AttributeValueList\": [{\"BS\": [\"blob\"]}],
+            \"ComparisonOperator\": \"string\"},
+          \"Key3\": {
+            \"AttributeValueList\": [{\"N\": \"string\"}],
+            \"ComparisonOperator\": \"string\"},
+          \"Key4\": {
+            \"AttributeValueList\": [{\"NS\": [\"string\"]}],
+            \"ComparisonOperator\": \"string\"},
+          \"Key5\": {
+            \"AttributeValueList\": [{\"S\": \"string\"}],
+            \"ComparisonOperator\": \"string\"},
+          \"Key6\": {
+            \"AttributeValueList\": [{\"SS\": [\"string\"]}],
+            \"ComparisonOperator\": \"string\"}
+        },
+      \"Limit\": \"number\",
+      \"ReturnConsumedCapacity\": \"string\",
+      \"ScanIndexForward\": \"boolean\",
+      \"Select\": \"string\",
+      \"TableName\": \"string\"
+      }">>,
+    Actual = decode_query(jsx:decode(Json_Bin)),
+    Expected = [{"AttributesToGet", [<<"string">>]},
+                {"ConsistentRead", false},
+                {"ExclusiveStartKey", [
+                  {<<"Key1">>, [{<<"B">>, <<"blob">>}]},
+                  {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}]},
+                  {<<"Key3">>, [{<<"N">>, <<"string">>}]},
+                  {<<"Key4">>, [{<<"NS">>, [<<"string">>]}]},
+                  {<<"Key5">>, [{<<"S">>, <<"string">>}]},
+                  {<<"Key6">>, [{<<"SS">>, [<<"string">>]}]}
+                ]},
+                {"IndexName", <<"string">>},
                 {"KeyConditions", [
-                    {"Key1", [{"B", "blob"}], "string"},
-                    {"Key2", [{"BS", ["blob"]}], "string"},
-                    {"Key3", [{"N", "string"}], "string"},
-                    {"Key4", [{"NS", ["string"]}], "string"},
-                    {"Key5", [{"S", "string"}], "string"},
-                    {"Key6", [{"SS", ["string"]}], "string"}
+                    {<<"Key1">>, [{<<"B">>, <<"blob">>}], <<"string">>},
+                    {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}], <<"string">>},
+                    {<<"Key3">>, [{<<"N">>, <<"string">>}], <<"string">>},
+                    {<<"Key4">>, [{<<"NS">>, [<<"string">>]}], <<"string">>},
+                    {<<"Key5">>, [{<<"S">>, <<"string">>}], <<"string">>},
+                    {<<"Key6">>, [{<<"SS">>, [<<"string">>]}], <<"string">>}
                      ]},
-                {"Limit", "number"},
-                {"ReturnConsumedCapacity", "string"},
-                {"ScanIndexForward", "boolean"},
-                {"Select", "string"},
-                {"TableName", "string"}],
+                {"Limit", <<"number">>},
+                {"ReturnConsumedCapacity", <<"string">>},
+                {"ScanIndexForward", <<"boolean">>},
+                {"Select", <<"string">>},
+                {"TableName", <<"string">>}],
     io:format("Actual: ~p", [Actual]),
     ?assertEqual(Expected, Actual).
 
