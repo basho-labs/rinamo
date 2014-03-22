@@ -10,15 +10,16 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-  case rinamo_config:is_enabled() of
-      true -> add_routes();
-      _ -> ok
-  end,
-
-  rinamo_sup:start_link().
+    case rinamo_config:is_enabled() of
+        true -> 
+            start_cowboy(),
+            rinamo_sup:start_link();
+        _ -> 
+            ok
+    end.
 
 stop(_State) ->
-  [webmachine_router:remove_route(R) || R <- routes()].
+    ok.
 
 %% ===================================================================
 %% Internal functions
