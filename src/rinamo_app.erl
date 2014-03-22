@@ -25,14 +25,24 @@ stop(_State) ->
 %% Internal functions
 %% ===================================================================
 
-add_routes() ->
-  [webmachine_router:add_route(R) || R <- routes()].
+start_cowboy() ->
+    CowboyStartFun = case rinamo_config:get_protocol() of
+        http -> fun cowboy:start_http/3;
+        https -> fun cowboy:start_https/3
+    end,
 
-props() ->
-  [].
+    {Ip, Port} = rinamo_config:get_bind_address(),
+    NumAcceptors = rinamo_config:get_num_acceptors(),
+    Dispatch = cowboy_router:compile(get_routes()),
 
-routes() ->
-  [
-    {[rinamo_config:endpoint_prefix()], rinamo_wm_endpoint, props()},
-    {[rinamo_config:endpoint_prefix(), "ping"], rinamo_wm_ping, props()}
-  ].
+    CowboyStartFun(rinamo_listener, NumAcceptors,
+        [{ip, Ip}, {port, Port}],
+        [{env, [{dispatch, Dispatch}]}]
+    ).
+
+get_routes() ->
+    [
+        %% {URIHost, list({URIPath, Handler, Opts})}
+        {'_', [{'/ping', rinamo_handler_ping, []}]},
+        {'_', [{'/', rinamo_handler_root, []}]}
+    ].
