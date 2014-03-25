@@ -1,4 +1,4 @@
--record(ctx, {
+-record(state, {
 	user_key :: binary()
 }).
 

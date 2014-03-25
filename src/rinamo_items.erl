@@ -8,9 +8,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--spec put_item(binary(), any(), #ctx{ user_key :: binary() }) -> ok.
+-spec put_item(binary(), any(), #state{ user_key :: binary() }) -> ok.
 put_item(Table, Item, AWSContext) ->
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
   {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
   [{FieldType, KeyValue}] = kvc:path(KeyAttribute, Item),
 
@@ -22,9 +22,9 @@ put_item(Table, Item, AWSContext) ->
     <<"RANGE">> -> ok
   end.
 
--spec get_item(binary(), binary(), #ctx{ user_key :: binary() }) -> any().
+-spec get_item(binary(), binary(), #state{ user_key :: binary() }) -> any().
 get_item(Table, Key, AWSContext) ->
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
   B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
 
   {_, Item_V} = rinamo_kv:get(
@@ -37,9 +37,9 @@ get_item(Table, Key, AWSContext) ->
     _ -> jsx:decode(Item_V)
   end.
 
--spec delete_item(binary(), binary(), #ctx{ user_key :: binary() }) -> ok.
+-spec delete_item(binary(), binary(), #state{ user_key :: binary() }) -> ok.
 delete_item(Table, Key, AWSContext) ->
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
   B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
 
   _ = rinamo_kv:delete(
@@ -69,7 +69,7 @@ store_hash_key(User, Table, Key, Item) ->
 
   ok.
 
--spec get_keyschema(binary(), #ctx{ user_key :: binary() }) -> tuple().
+-spec get_keyschema(binary(), #state{ user_key :: binary() }) -> tuple().
 get_keyschema(Table, AWSContext) ->
   TD = rinamo_tables:load_table_def(Table, AWSContext),
   case TD of
@@ -99,7 +99,7 @@ put_item_test() ->
 
   Table = <<"TableName">>,
   Item = kvc:path("Item", jsx:decode(item_fixture())),
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
   _ = put_item(Table, Item, AWSContext),
 
   meck:unload([rinamo_tables, rinamo_kv]).
@@ -111,7 +111,7 @@ get_item_test() ->
 
   Table = <<"Item Table">>,
   Key = <<"Some_Item_Key">>,
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
   Actual = get_item(Table, Key, AWSContext),
   Expected = [<<"Some_Item_Def_JSON_Here">>],
@@ -126,7 +126,7 @@ delete_item_test() ->
 
   Table = <<"Item Table">>,
   Key = <<"Some_Item_Key">>,
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
   Actual = delete_item(Table, Key, AWSContext),
   Expected = ok,

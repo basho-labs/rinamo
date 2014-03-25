@@ -12,7 +12,7 @@
 create_table(Table, RawSchema, AWSContext) ->
   lager:debug("RawSchema: ~p~n", [RawSchema]),
 
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
 
   B = UserKey,
   List_K = <<"TableList">>,
@@ -48,7 +48,7 @@ create_table(Table, RawSchema, AWSContext) ->
   {R0, R1}.
 
 list_tables(AWSContext) ->
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
 
   B = UserKey,
   List_K = <<"TableList">>,
@@ -64,7 +64,7 @@ list_tables(AWSContext) ->
   end.
 
 load_table_def(Table, AWSContext) ->
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
 
   B = UserKey,
   Table_K = Table,
@@ -86,7 +86,7 @@ delete_table(Table, AWSContext) ->
     _ -> ok
   end,
 
-  UserKey = AWSContext#ctx.user_key,
+  UserKey = AWSContext#state.user_key,
 
   B = UserKey,
   Table_K = Table,
@@ -122,7 +122,7 @@ create_table_test() ->
   meck:expect(rinamo_kv, get, 3, {value, <<"[\"one\",\"two\",\"three\"]">>}),
   meck:expect(rinamo_kv, put, 5, ok),
 
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
   Table = <<"TableName">>,
   Fields = [{<<"AttributeName">>, <<"attr_name">>}, {<<"AttributeType">>, <<"attr_type">>}],
   KeySchema = [{<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}],
@@ -143,7 +143,7 @@ list_tables_test() ->
   meck:expect(rinamo_kv, client, 0, ok),
   meck:expect(rinamo_kv, get, 3, {value, <<"[\"one\",\"two\",\"three\"]">>}),
 
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
   Actual = list_tables(AWSContext),
   Expected = [<<"one">>, <<"two">>, <<"three">>],
@@ -157,7 +157,7 @@ load_table_def_test() ->
   meck:expect(rinamo_kv, get, 3, {value, <<"[\"Some_Table_Def_JSON_Here\"]">>}),
 
   Table = <<"Some_Table">>,
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
   Actual = load_table_def(Table, AWSContext),
   Expected = [<<"Some_Table_Def_JSON_Here">>],
@@ -173,7 +173,7 @@ delete_table_test() ->
   meck:expect(rinamo_kv, put, 5, ok),
 
   Table = <<"Another Table">>,
-  AWSContext=#ctx{ user_key = <<"TEST_API_KEY">> },
+  AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
   Actual = delete_table(Table, AWSContext),
   Expected = [<<"Some_Table_Def_JSON_Here">>],
