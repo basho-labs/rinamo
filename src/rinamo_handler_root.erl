@@ -75,9 +75,6 @@ terminate(_Reason, _Req, _State) ->
 	ok.
 
 %% Internal
-create_request_id() ->
-    uuid:get_v5_compat().
-
 
 %% TODO: this needs to be updated to work with binaries instead of strings.
 dynamo_op(OpHeader) ->

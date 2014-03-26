@@ -42,10 +42,14 @@ start_cowboy() ->
         [{ip, Ip}, {port, Port}],
         [
             {env, [{dispatch, Dispatch}]},
-            {middlewares, [cowboy_router,
-              rinamo_middleware_auth,
-              rinamo_middleware_metering,
-            cowboy_handler]}
+            {middlewares, [
+                cowboy_router,
+                rinamo_middleware_reqid,
+                rinamo_middleware_auth,
+                rinamo_middleware_metering,
+                cowboy_handler
+                %%rinamo_middleware_crc32
+            ]}
         ]
     ).
 
