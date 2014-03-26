@@ -22,9 +22,11 @@ execute(Req, Env) ->
         rinamo_error:format(ErrorMsg), Req),
       {halt, Req};
     _ ->
+
       AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
-      lager:debug("Middleware Env: ~p~n", [Env]),
-      {ok, Req, Env}
+      NewEnv = [{handler_opts, {access_key, AccessKey}} | lists:keydelete(handler_opts, 1, Env)],
+
+      {ok, Req, NewEnv}
     end.
 
 tokenize_auth_header(HeaderValue) ->
