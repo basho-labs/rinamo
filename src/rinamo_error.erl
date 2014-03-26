@@ -85,7 +85,37 @@ make(internal_server_error) ->
 make(service_unavailable) ->
     build_error(500,
         <<"ServiceUnavailableException">>,
-        <<"The service is currently unavailable or busy.">>).
+        <<"The service is currently unavailable or busy.">>);
+
+% Observed AWS Errors that are outside of their documentation
+
+make(table_exists) ->
+    build_error(400,
+        <<"ResourceInUseException">>,
+        <<"Cannot create preexisting table.">>);
+
+make(table_missing) ->
+    build_error(400,
+        <<"ResourceNotFoundException">>,
+        <<"Cannot do operations on a non-existent table.">>);
+
+
+% Basho Specific Errors
+
+make(missing_operation_target) ->
+    build_error(400,
+        <<"OperationNotPermittedException">>,
+        <<"Request must contain a valid AWS Dynamo Operation.">>);
+
+make(operation_not_implemented) ->
+    build_error(500,
+        <<"InternalServerErrorException">>,
+        <<"Operation Not Implemented.">>);
+
+make(insufficient_vnodes_available) ->
+    build_error(500,
+        <<"InternalServerErrorException">>,
+        <<"Insufficient VNodes Available.">>).
 
 format(Error) ->
     erlang:iolist_to_binary([

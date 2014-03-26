@@ -1,5 +1,7 @@
 -record(state, {
-	user_key :: binary()
+	user_key :: binary(),
+	operation :: binary(),
+	aws_api_version :: binary()
 }).
 
 -record(error, {

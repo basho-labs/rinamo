@@ -43,6 +43,7 @@ start_cowboy() ->
             {env, [{dispatch, Dispatch}]},
             {middlewares, [cowboy_router,
               rinamo_middleware_auth,
+              rinamo_middleware_op,
               rinamo_middleware_metering,
             cowboy_handler]}
         ]

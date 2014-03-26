@@ -32,7 +32,7 @@ get_item(Table, Key, AWSContext) ->
   ),
 
   case Item_V of
-    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes);
+    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes_available);
     notfound -> notfound;
     _ -> jsx:decode(Item_V)
   end.

@@ -26,7 +26,7 @@ create_table(Table, RawSchema, AWSContext) ->
   lager:debug("Prior List State: ~p~n", [List]),
 
   List_V = case List of
-    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes);
+    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes_available);
     notfound -> update_table_list([], Table);
     _ -> update_table_list(jsx:decode(List), Table)
   end,
@@ -58,7 +58,7 @@ list_tables(AWSContext) ->
   ),
 
   case List of
-    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes);
+    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes_available);
     notfound -> [];
     _ -> jsx:decode(List)
   end.
@@ -74,7 +74,7 @@ load_table_def(Table, AWSContext) ->
   ),
 
   case Table_V of
-    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes);
+    {insufficient_vnodes, _, _, _} -> throw(insufficient_vnodes_available);
     notfound -> notfound;
     _ -> jsx:decode(Table_V)
   end.
