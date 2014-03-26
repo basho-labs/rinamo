@@ -40,9 +40,11 @@ start_cowboy() ->
     CowboyStartFun(rinamo_listener, NumAcceptors,
         [{ip, Ip}, {port, Port}],
         [
-            {env, [{dispatch, Dispatch}]}
-            % TODO: make middleware work
-            % {middlewares, [cowboy_router, rinamo_middleware_auth, rinamo_middleware_metering, cowboy_handler]}
+            {env, [{dispatch, Dispatch}]},
+            {middlewares, [cowboy_router,
+              rinamo_middleware_auth,
+              rinamo_middleware_metering,
+            cowboy_handler]}
         ]
     ).
 

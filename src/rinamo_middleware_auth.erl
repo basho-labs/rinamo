@@ -1,20 +1,27 @@
 -module(rinamo_middleware_auth).
--behaviour(cowboy_middleware).
 
--include("rinamo.hrl").
+-behaviour(cowboy_middleware).
 
 -export([execute/2]).
 
+-include("rinamo.hrl").
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
+
 execute(Req, Env) ->
-    AuthToken = tokenize_auth_header(cowboy_req:header(?AMZ_AUTH_HEADER, Req)),
-    
+    { AuthToken, _ } = cowboy_req:header(?AMZ_AUTH_HEADER, Req),
+
     case AuthToken of
-        undefined -> 
+        undefined ->
             ErrorMsg = rinamo_error:make(missing_authentication_token),
             {halt, _Req2} = cowboy_req:reply(ErrorMsg#error.http_code, [
                                             {<<"content-type">>, <<"application/json">>}
                                             ], rinamo_error:format(ErrorMsg), Req);
         _ ->
+            AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
             {ok, Req, Env}
     end.
 
@@ -34,13 +41,13 @@ tokenize_auth_header(HeaderValue) ->
 
 auth_fixture() ->
   {_, Fixture} = file:read_file("../tests/fixtures/access_key.txt"),
-  binary:bin_to_list(Fixture).
+  binary_to_list(Fixture).
 
 tokenize_auth_header_test() ->
   Input = auth_fixture(),
-  Actual = dynamo_user(Input),
+  Actual = tokenize_auth_header(Input),
   Expected = <<"RANDY_ACCESS_KEY">>,
   ?assertEqual(Expected, Actual),
-  ?assertEqual(undefined, dynamo_user(undefined)).
+  ?assertEqual(undefined, tokenize_auth_header(undefined)).
 
 -endif.
