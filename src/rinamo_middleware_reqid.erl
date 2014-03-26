@@ -13,8 +13,8 @@
 -endif.
 
 execute(Req, Env) ->
-    Req2 = cowboy_req:set_resp_header(?AMZ_REQ_ID_HEADER, create_request_id(), Req),
-    {ok, Req2, Env}.
+    _ = cowboy_req:set_resp_header(?AMZ_REQ_ID_HEADER, create_request_id(), Req),
+    {ok, Req, Env}.
 
 create_request_id() ->
-    uuid:get_v5_compat().
+    uuid:get_v4().
