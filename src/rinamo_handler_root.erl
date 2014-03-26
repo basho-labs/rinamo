@@ -36,6 +36,8 @@ handle(Req, State) ->
 %        _ -> {error, unimplemented}
 %    end,
 
+    lager:debug("State Env: ~p~n", [State]),
+
     {ok, Req2} = cowboy_req:reply(200, [
       {<<"content-type">>, <<"text/plain">>}
     ], <<"The Response Body">>, Req),

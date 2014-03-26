@@ -12,29 +12,31 @@
 
 
 execute(Req, Env) ->
-    { AuthToken, _ } = cowboy_req:header(?AMZ_AUTH_HEADER, Req),
+  {AuthToken, _} = cowboy_req:header(?AMZ_AUTH_HEADER, Req),
 
-    case AuthToken of
-        undefined ->
-            ErrorMsg = rinamo_error:make(missing_authentication_token),
-            {halt, _Req2} = cowboy_req:reply(ErrorMsg#error.http_code, [
-                                            {<<"content-type">>, <<"application/json">>}
-                                            ], rinamo_error:format(ErrorMsg), Req);
-        _ ->
-            AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
-            {ok, Req, Env}
+  case AuthToken of
+    undefined ->
+      ErrorMsg = rinamo_error:make(missing_authentication_token),
+      cowboy_req:reply(ErrorMsg#error.http_code,
+        [{<<"content-type">>, <<"application/json">>}],
+        rinamo_error:format(ErrorMsg), Req),
+      {halt, Req};
+    _ ->
+      AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
+      lager:debug("Middleware Env: ~p~n", [Env]),
+      {ok, Req, Env}
     end.
 
 tokenize_auth_header(HeaderValue) ->
-    case HeaderValue of
-        undefined -> undefined;
-        _ ->
-            [_, Credentials, _, _] = string:tokens(HeaderValue, " "),
-            StartCharPos = string:str(Credentials, "="),
-            EndCharPos = string:str(Credentials, "/"),
-            UserKey = string:substr(Credentials, StartCharPos + 1, EndCharPos - (StartCharPos + 1)),
-            list_to_binary(UserKey)
-    end.
+  case HeaderValue of
+    undefined -> undefined;
+    _ ->
+      [_, Credentials, _, _] = string:tokens(HeaderValue, " "),
+      StartCharPos = string:str(Credentials, "="),
+      EndCharPos = string:str(Credentials, "/"),
+      UserKey = string:substr(Credentials, StartCharPos + 1, EndCharPos - (StartCharPos + 1)),
+      list_to_binary(UserKey)
+  end.
 
 
 -ifdef(TEST).
