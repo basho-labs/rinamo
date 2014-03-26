@@ -13,8 +13,8 @@
 -endif.
 
 execute(Req, Env) ->
-    _ = cowboy_req:set_resp_header(?AMZ_REQ_ID_HEADER, create_request_id(), Req),
-    {ok, Req, Env}.
+    TaggedReq = cowboy_req:set_resp_header(?AMZ_REQ_ID_HEADER, create_request_id(), Req),
+    {ok, TaggedReq, Env}.
 
 create_request_id() ->
-    uuid:get_v4().
+    uuid:get_v5_compat(<<"rinamo to rule them all">>).
