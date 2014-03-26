@@ -13,6 +13,7 @@ start(_StartType, _StartArgs) ->
     case rinamo_config:is_enabled() of
         true ->
             % TODO: should check to see that cowboy starts
+            application:ensure_all_started(rinamo),
             start_cowboy(),
             rinamo_sup:start_link();
         _ ->
