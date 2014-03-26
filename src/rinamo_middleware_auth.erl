@@ -27,7 +27,7 @@ execute(Req, Env) ->
       NewEnv = [{handler_opts, {access_key, AccessKey}} | lists:keydelete(handler_opts, 1, Env)],
 
       {ok, Req, NewEnv}
-    end.
+  end.
 
 tokenize_auth_header(HeaderValue) ->
   case HeaderValue of
