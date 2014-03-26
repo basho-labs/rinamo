@@ -27,11 +27,12 @@ stop(_State) ->
 
 start_cowboy() ->
     CowboyStartFun = case rinamo_config:get_protocol() of
-        http -> fun cowboy:start_http/3;
-        https -> fun cowboy:start_https/3
+        http -> fun cowboy:start_http/4;
+        https -> fun cowboy:start_https/4
     end,
 
-    {Ip, Port} = rinamo_config:get_bind_address(),
+    {RawIp, Port} = rinamo_config:get_bind_address(),
+    {ok, Ip} = inet_parse:address(RawIp),
     NumAcceptors = rinamo_config:get_num_acceptors(),
     Dispatch = cowboy_router:compile(get_routes()),
 
