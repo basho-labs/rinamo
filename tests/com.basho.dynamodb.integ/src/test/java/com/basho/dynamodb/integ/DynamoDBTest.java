@@ -38,8 +38,7 @@ public class DynamoDBTest {
     }
 
     client = new AmazonDynamoDBClient(creds);
-    client.setEndpoint("http://localhost:8098/rinamo");
-//    client.setEndpoint("http://localhost:8000");
+    client.setEndpoint("http://localhost:8000");
   }
   
   @After

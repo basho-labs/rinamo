@@ -1,5 +1,4 @@
 -module(rinamo_middleware_auth).
-
 -behaviour(cowboy_middleware).
 
 -export([execute/2]).
@@ -11,7 +10,6 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
-
 
 execute(Req, Env) ->
   {AuthToken, _} = cowboy_req:header(?AMZ_AUTH_HEADER, Req),
@@ -26,11 +24,22 @@ execute(Req, Env) ->
     _ ->
 
       AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
-      NewEnv = [{handler_opts, {access_key, AccessKey}} | lists:keydelete(handler_opts, 1, Env)],
+
+      {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
+      lager:debug("Auth HandlerOpts: ~p~n", [HandlerOpts]),
+      State = case HandlerOpts of
+        [] ->
+          #state{user_key = AccessKey};
+        _ ->
+          HandlerOpts#state{user_key = AccessKey}
+      end,
+
+      NewEnv = [{handler_opts, State} | PartialEnv],
 
       {ok, Req, NewEnv}
   end.
 
+%% Internal
 tokenize_auth_header(HeaderValue) ->
   case HeaderValue of
     undefined -> undefined;
