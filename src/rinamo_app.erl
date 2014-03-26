@@ -11,15 +11,16 @@
 
 start(_StartType, _StartArgs) ->
     case rinamo_config:is_enabled() of
-        true -> 
+        true ->
+            % TODO: should check to see that cowboy starts
             start_cowboy(),
             rinamo_sup:start_link();
-        _ -> 
+        _ ->
             ok
     end.
 
 stop(_State) ->
-    ok.
+    cowboy:stop_listener(rinamo_listener).
 
 %% ===================================================================
 %% Internal functions
@@ -39,14 +40,14 @@ start_cowboy() ->
     CowboyStartFun(rinamo_listener, NumAcceptors,
         [{ip, Ip}, {port, Port}],
         [
-            {env, [{dispatch, Dispatch}]},
-            {middlewares, [cowboy_router, rinamo_middleware_auth, rinamo_middleware_metering, cowboy_handler]}
+            {env, [{dispatch, Dispatch}]}
+            % TODO: make middleware work
+            % {middlewares, [cowboy_router, rinamo_middleware_auth, rinamo_middleware_metering, cowboy_handler]}
         ]
     ).
 
 get_routes() ->
-    [
-        %% {URIHost, list({URIPath, Handler, Opts})}
-        {'_', [{'/ping', rinamo_handler_ping, []}]},
-        {'_', [{'/', rinamo_handler_root, []}]}
-    ].
+    [{'_', [
+        {<<"/ping">>, rinamo_handler_ping, []},
+        {<<"/">>, rinamo_handler_root, []}
+    ]}].
