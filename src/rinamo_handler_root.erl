@@ -61,8 +61,5 @@ terminate(_Reason, _Req, _State) ->
 	ok.
 
 %% Internal
-create_request_id() ->
-    uuid:get_v5_compat().
-
 response(Status, ResponseBody, Req) ->
   cowboy_req:reply(Status, [{<<"content-type">>, <<"application/json">>}], ResponseBody, Req).

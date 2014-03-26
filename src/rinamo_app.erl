@@ -13,6 +13,7 @@ start(_StartType, _StartArgs) ->
     case rinamo_config:is_enabled() of
         true ->
             % TODO: should check to see that cowboy starts
+            application:ensure_all_started(rinamo),
             start_cowboy(),
             rinamo_sup:start_link();
         _ ->
@@ -41,11 +42,15 @@ start_cowboy() ->
         [{ip, Ip}, {port, Port}],
         [
             {env, [{dispatch, Dispatch}]},
-            {middlewares, [cowboy_router,
+            {middlewares, [
+              cowboy_router,
+              rinamo_middleware_reqid,
               rinamo_middleware_auth,
               rinamo_middleware_op,
               rinamo_middleware_metering,
-            cowboy_handler]}
+              cowboy_handler
+              %%rinamo_middleware_crc32
+            ]}
         ]
     ).
 
