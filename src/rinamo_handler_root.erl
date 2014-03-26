@@ -42,7 +42,9 @@ handle(Req, State) ->
     {_, Body, _} = cowboy_req:body(Req),
 
     {_, Req2} = case OpFun of
-      {error, unimplemented} -> rinamo_error:make(operation_not_implemented);
+      {error, unimplemented} ->
+        ErrorMsg = rinamo_error:make(operation_not_implemented),
+        response(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req);
       {Module, Function} ->
         Result = (catch erlang:apply(Module, Function, [jsx:decode(Body), State])),
         lager:debug("Operation Result: ~p~n", [Result]),
