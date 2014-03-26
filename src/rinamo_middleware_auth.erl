@@ -6,6 +6,8 @@
 
 -include("rinamo.hrl").
 
+-define(AMZ_AUTH_HEADER,<<"authorization">>).
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.

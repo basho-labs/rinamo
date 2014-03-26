@@ -9,6 +9,3 @@
 }).
 
 -define(RINAMO_SEPARATOR, 16#1f).
-
--define(AMZ_AUTH_HEADER,<<"authorization">>).
--define(AMZ_OP_HEADER,<<"x-amz-target">>).

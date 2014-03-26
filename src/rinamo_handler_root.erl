@@ -9,6 +9,8 @@
 
 -include_lib("rinamo/include/rinamo.hrl").
 
+-define(AMZ_OP_HEADER,<<"x-amz-target">>).
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
