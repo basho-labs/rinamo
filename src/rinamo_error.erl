@@ -118,10 +118,5 @@ make(insufficient_vnodes_available) ->
         <<"Insufficient VNodes Available.">>).
 
 format(Error) ->
-    erlang:iolist_to_binary([
-      <<"{\"__type\":\"com.amazonaws.dynamodb.v20120810#">>,
-      Error#error.code,
-      <<"\",\"Message\":\"">>,
-      Error#error.message,
-      <<"\"}">>
-    ]).
+    [{<<"__type">>, Error#error.code},
+     {<<"Message">>, Error#error.message}].
