@@ -8,13 +8,18 @@
 ]).
 
 is_enabled() ->
-    application:get_env(rinamo, enabled, true).
+    get_env(enabled).
 
 get_protocol() ->
-    proplists:get_value(protocol, application:get_env(rinamo, network)).
+    proplists:get_value(protocol, get_env(network)).
 
 get_bind_address() ->
-    proplists:get_value(bind, application:get_env(rinamo, network)).
+    proplists:get_value(bind, get_env(network)).
 
 get_num_acceptors() ->
-    proplists:get_value(acceptors, application:get_env(rinamo, network)).
+    proplists:get_value(acceptors, get_env(network)).
+
+%% Internal
+get_env(Key) ->
+  {_, Value} = application:get_env(rinamo, Key),
+  Value.

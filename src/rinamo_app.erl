@@ -45,7 +45,6 @@ start_cowboy() ->
               cowboy_router,
               rinamo_middleware_reqid,
               rinamo_middleware_auth,
-              rinamo_middleware_op,
               rinamo_middleware_metering,
               cowboy_handler
             ]}
