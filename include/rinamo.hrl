@@ -11,3 +11,4 @@
 }).
 
 -define(RINAMO_SEPARATOR, 16#1f).
+-define(AMZ_CRC32_HEADER, <<"x-amz-crc32">>).

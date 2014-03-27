@@ -7,11 +7,7 @@
     terminate/3
 ]).
 
--include_lib("rinamo/include/rinamo.hrl").
-
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
+-include("rinamo.hrl").
 
 init(_Type, Req, _Opts) ->
     {ok, Req, _Opts}.
@@ -51,7 +47,7 @@ handle(Req, State) ->
             ErrorMsg = rinamo_error:make(Result),
             response(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req);
           _ ->
-            response(200, jsx:encode(Result), Req)
+            response(200, Result, Req)
         end
     end,
 
@@ -62,4 +58,12 @@ terminate(_Reason, _Req, _State) ->
 
 %% Internal
 response(Status, ResponseBody, Req) ->
-  cowboy_req:reply(Status, [{<<"content-type">>, <<"application/json">>}], ResponseBody, Req).
+    {ok, Json, Crc32} = rinamo_response:make(ResponseBody),
+    ReqWcrc32 = cowboy_req:set_resp_header(?AMZ_CRC32_HEADER, integer_to_binary(Crc32), Req),
+    cowboy_req:reply(Status, [{<<"content-type">>, <<"application/json">>}], Json, ReqWcrc32).
+
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
