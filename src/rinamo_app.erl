@@ -12,11 +12,7 @@
 start(_StartType, _StartArgs) ->
     case rinamo_config:is_enabled() of
         true ->
-            % the following prevents riak from starting cowboy
-            % (if uncommented)
-            % application:ensure_all_started(rinamo),
-
-            % TODO: should check to see that cowboy actually starts
+            application:ensure_all_started(rinamo),
             start_cowboy(),
             rinamo_sup:start_link();
         _ ->
