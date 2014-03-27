@@ -12,7 +12,6 @@
 start(_StartType, _StartArgs) ->
     case rinamo_config:is_enabled() of
         true ->
-            application:ensure_all_started(rinamo),
             start_cowboy(),
             rinamo_sup:start_link();
         _ ->
