@@ -13,6 +13,9 @@ import org.junit.Test;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
@@ -56,10 +59,20 @@ public class ItemOperationsITCase extends DynamoDBTest {
     item.put("PageCount", new AttributeValue().withN("500"));
     item.put("InPublication", new AttributeValue().withN("1"));
     item.put("ProductCategory", new AttributeValue().withS("Book"));
-    PutItemRequest pir = new PutItemRequest().withItem(item);
-    pir.setTableName(tableName);
-    PutItemResult result = client.putItem(pir);
-    assertNotNull(result);
+    
+    try {
+      PutItemRequest pir = new PutItemRequest().withItem(item);
+      pir.setTableName(tableName);
+      PutItemResult result = client.putItem(pir);
+      assertNotNull(result);
+      await().atMost(5, SECONDS).until(itemExists("Id", 101, "Title", "Book 101 Title"));
+    }
+    finally {
+      DeleteItemRequest dir = new DeleteItemRequest().addKeyEntry("Id", new AttributeValue().withN("101"));
+      dir.setTableName(tableName);
+      client.deleteItem(dir);
+      await().atMost(5, SECONDS).until(itemDoesNotExist("Id", 101));
+    }
   }
 
   @Test
@@ -73,6 +86,19 @@ public class ItemOperationsITCase extends DynamoDBTest {
     }
     catch(AmazonServiceException e) { expected = e; }
     assertNotNull(expected);
+  }
+  
+  @Test
+  public void getItemTest() {
+    Map<String, AttributeValue> attrs = new HashMap<String, AttributeValue>();
+    attrs.put("Id", new AttributeValue().withN("101"));
+    GetItemRequest gir = new GetItemRequest().addKeyEntry("Id", new AttributeValue().withN("101"));
+    gir.setTableName(tableName);
+    gir.setConsistentRead(false);
+    GetItemResult result = client.getItem(gir);
+    assertNotNull(result);
+    Map<String,AttributeValue> item = result.getItem();
+    assertNull(item);
   }
 
 }

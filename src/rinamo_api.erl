@@ -119,8 +119,10 @@ get_item(DynamoRequest, AWSContext) ->
   [{_, {_, Key}}] = Keys,
 
   Item = rinamo_items:get_item(TableName, Key, AWSContext),
-
-  [{ <<"Item">>, Item }].
+  case Item of
+      notfound -> [{}];
+      _ -> [{ <<"Item">>, Item }]
+  end.
 
 % ---- Delete Item ---- %
 
