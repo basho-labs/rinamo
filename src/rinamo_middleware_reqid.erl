@@ -12,7 +12,7 @@ execute(Req, Env) ->
     {ok, TaggedReq, Env}.
 
 create_request_id() ->
-    uuid:get_v5_compat(<<"rinamo to rule them all">>).
+    uuid:uuid_to_string(uuid:get_v5_compat(<<"rinamo to rule them all">>)).
 
 
 
