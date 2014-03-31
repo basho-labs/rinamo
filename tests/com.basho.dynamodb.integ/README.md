@@ -15,5 +15,5 @@ If your system has all the prerequisites, running things is easy:
 
 * Test Console
   * `mvn test-compile scala:console`
-  * `scala>:load console/tables.scala`
-  * `scala>: Table.list()`
+  * `scala> :load console/tables.scala`
+  * `scala> Table.list()`
