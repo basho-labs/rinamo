@@ -30,8 +30,8 @@ create_table(DynamoRequest, AWSContext) ->
       % Enrich Response as needed
       [{ <<"TableDescription">>, [
         {<<"TableName">>, Table},
-        {<<"AttributeDefinitions">>, [Fields]},
-        {<<"KeySchema">>, [KeySchema]},
+        {<<"AttributeDefinitions">>, Fields},
+        {<<"KeySchema">>, KeySchema},
         {<<"ProvisionedThroughput">>, ProvisionedThroughput},
         {<<"LocalSecondaryIndexes">>, [{}]},
         {<<"GlobalSecondaryIndexes">>, [{}]},
