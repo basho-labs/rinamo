@@ -4,6 +4,7 @@ import scala.collection.JavaConversions._
 import com.amazonaws.auth._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
+import com.amazonaws.services.dynamodbv2.datamodeling._
 
 object Table {
   val client = RinamoConsole.config()
@@ -68,7 +69,7 @@ object Table {
     request.setTableName(table_name)
     return client.getItem(request)
   }
-  
+
   def delete(
       table_name:String,
       _key:String, _type:String, _value:String): DeleteItemResult = {
@@ -77,6 +78,29 @@ object Table {
     val request = new DeleteItemRequest().addKeyEntry(_key, value)
     request.setTableName(table_name)
     return client.deleteItem(request)
+  }
+
+  def query(table_name:String, range_key:String, operator:String, range_value:String):QueryResult = {
+    val request = new QueryRequest()
+
+    val hash_condition = new Condition()
+      .withComparisonOperator(ComparisonOperator.EQ.toString())
+      .withAttributeValueList(new AttributeValue().withN(range_key))
+
+    // any string val > "c"
+    val range_condition = new Condition()
+      .withComparisonOperator(ComparisonOperator.fromValue(operator))
+      .withAttributeValueList(new AttributeValue().withS(range_value))
+
+    var key_conditions:Map[String, Condition] = Map()
+    key_conditions += (("Id", hash_condition))
+    key_conditions += (("Title", range_condition))
+
+    request.setKeyConditions(key_conditions)
+    request.setTableName(table_name)
+    
+    return client.query(request)
+    
   }
 
 }
