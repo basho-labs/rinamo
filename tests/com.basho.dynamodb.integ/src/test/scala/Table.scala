@@ -6,10 +6,7 @@ import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
 
 object Table {
-  val creds = new PropertiesCredentials(classOf[com.basho.dynamodb.integ.DynamoDBTest].getResourceAsStream("AwsCredentials.properties"))
-  val client = new AmazonDynamoDBClient(creds)
-  client.setEndpoint("http://localhost:8000")
-
+  val client = RinamoConsole.config()
   def create(
       table_name:String, key_name:String, key_type:String = "N",
       range_key_name:Option[String] = None,
