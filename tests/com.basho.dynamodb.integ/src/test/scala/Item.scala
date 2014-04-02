@@ -5,15 +5,29 @@ import com.amazonaws.auth._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
 
-object Items {
-  val client = RinamoConsole.config()
+class Item {
+  private var map: Map[String, AttributeValue] = Map()
 
-  def get() {
+  def add(_name:String, _type:String, _value:String): Item = {
+    val value = Item.build_value(_name, _type, _value)
+    map += value
+    return this
   }
   
-  def put() {
+  override def toString: String = {
+    map.toString
   }
   
-  def delete() {
+  def asMap():Map[String, AttributeValue] = {
+    return map
   }
+}
+
+object Item {
+  def build_value(_name:String, _type:String, _value:String):(String,AttributeValue) = {
+    return _type match {
+      case "N" => (_name, new AttributeValue().withN(_value))
+      case "S" => (_name, new AttributeValue().withS(_value))
+    }
+  }  
 }

@@ -38,8 +38,7 @@ object Table {
       .withAttributeDefinitions(attribute_defs.asJava)
       .withProvisionedThroughput(provisioned_throughput)
 
-    val result = client.createTable(request)
-    return result
+    return client.createTable(request)
   }
 
   def list(): List[String] = {
@@ -52,6 +51,32 @@ object Table {
 
   def delete(table_name:String): DeleteTableResult = {
     return client.deleteTable(table_name)
+  }
+    
+  def put(table_name:String, item:Item): PutItemResult = {
+    val request = new PutItemRequest().withItem(item.asMap())
+    request.setTableName(table_name)
+    return client.putItem(request)
+  }
+
+  def get(
+      table_name:String,
+      _key:String, _type:String, _value:String): GetItemResult = {
+
+    val (_, value) = Item.build_value(_key, _type, _value)
+    val request = new GetItemRequest().addKeyEntry(_key, value)
+    request.setTableName(table_name)
+    return client.getItem(request)
+  }
+  
+  def delete(
+      table_name:String,
+      _key:String, _type:String, _value:String): DeleteItemResult = {
+
+    val (_, value) = Item.build_value(_key, _type, _value)
+    val request = new DeleteItemRequest().addKeyEntry(_key, value)
+    request.setTableName(table_name)
+    return client.deleteItem(request)
   }
 
 }
