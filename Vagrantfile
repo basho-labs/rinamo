@@ -15,7 +15,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         vb.customize ["modifyvm", :id, "--cpus", "2"]
         vb.customize ["modifyvm", :id, "--memory", "2048"]
         vb.customize ["modifyvm", :id, "--acpi", "on"]
-        vb.customize ["modifyvm", :id, "--ioacpi", "on"]
         vb.customize ["modifyvm", :id, "--hpet", "on"]
         vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
     end
