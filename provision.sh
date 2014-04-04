@@ -67,7 +67,7 @@ verify_checksum "apache-maven-3.2.1-bin.tar.gz" aaef971206104e04e21a3b580d9634fe
 if [ ! -e bin/apache-maven-3.2.1/bin/mvn ]; then
   mkdir -p bin
   tar -xzf apache-maven-3.2.1-bin.tar.gz -C bin
-  echo 'export PATH=$PATH:bin/apache-maven-3.2.1/bin' > .bash_profile
+  echo 'export PATH=$PATH:$HOME/bin/apache-maven-3.2.1/bin' > .bash_profile
 fi
 
 # Erlang
