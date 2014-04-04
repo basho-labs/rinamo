@@ -132,14 +132,14 @@ decode_put_expected([Field|Rest], Acc) ->
         <<"true">> -> true;
         _ -> false
     end,
-    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}|Acc]).
+    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]} | Acc]).
 
 
 decode_table_attributes([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 decode_table_attributes([Attribute|Rest], Acc) ->
-    decode_table_attributes(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
-                                   {<<"AttributeType">>, kvc:path("AttributeType", Attribute)} | Acc]).
+    decode_table_attributes(Rest, [[{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
+                                   {<<"AttributeType">>, kvc:path("AttributeType", Attribute)}] | Acc]).
 
 decode_2i([], Acc) ->
     lists:reverse(Acc);
@@ -156,10 +156,10 @@ decode_2i([Index|Rest], Acc) ->
 
 
 decode_2i_key_schema([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 decode_2i_key_schema([Attribute|Rest], Acc) ->
-    decode_2i_key_schema(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
-                                {<<"KeyType">>, kvc:path("KeyType", Attribute)} | Acc]).
+    decode_2i_key_schema(Rest, [[{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
+                                {<<"KeyType">>, kvc:path("KeyType", Attribute)}] | Acc]).
 
 decode_key_conditions([], Acc) ->
     lists:reverse(Acc);
@@ -292,14 +292,22 @@ decode_create_table_test() ->
     Json_Bin = <<"{
       \"AttributeDefinitions\": [
         {
-            \"AttributeName\": \"attr_name\",
-            \"AttributeType\": \"attr_type\"
+            \"AttributeName\": \"Id\",
+            \"AttributeType\": \"N\"
+        },
+        {
+            \"AttributeName\": \"Date\",
+            \"AttributeType\": \"S\"
         }
       ],
       \"KeySchema\": [
         {
-            \"AttributeName\": \"attr_name\",
-            \"KeyType\": \"key_type\"
+            \"AttributeName\": \"Id\",
+            \"KeyType\": \"HASH\"
+        },
+        {
+            \"AttributeName\": \"Date\",
+            \"KeyType\": \"RANGE\"
         }
       ],
       \"LocalSecondaryIndexes\": [
@@ -328,15 +336,17 @@ decode_create_table_test() ->
     Actual = decode_create_table(jsx:decode(Json_Bin)),
     io:format("Actual: ~p~n", [Actual]),
     Expected = [{tablename, <<"table_name">>},
-                {fields, [
-                  {<<"AttributeName">>, <<"attr_name">>}, {<<"AttributeType">>, <<"attr_type">>}
+                {fields,[
+                    [{<<"AttributeName">>, <<"Id">>}, {<<"AttributeType">>, <<"N">>}],
+                    [{<<"AttributeName">>, <<"Date">>}, {<<"AttributeType">>, <<"S">>}]
                 ]},
                 {key_schema, [
-                  {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
+                  [{<<"AttributeName">>, <<"Id">>}, {<<"KeyType">>, <<"HASH">>}],
+                  [{<<"AttributeName">>, <<"Date">>}, {<<"KeyType">>, <<"RANGE">>}]
                 ]},
                 {lsi, [[{<<"2i_name">>,
                         [{key_schema, [
-                          {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
+                          [{<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}]
                         ]},
                         {projection, [{non_key_attributes, [<<"attr_name">>]},
                                       {projection_type, <<"projection_type">>}]}]

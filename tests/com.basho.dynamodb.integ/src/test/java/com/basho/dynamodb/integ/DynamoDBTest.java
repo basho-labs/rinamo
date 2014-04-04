@@ -14,8 +14,11 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
@@ -100,5 +103,39 @@ public class DynamoDBTest {
       }
     };
   }
+
+  protected Callable<Boolean> itemExists(final String key_attr, int key_value,
+                                         final String v_attr, final String v_value) {
+    final String i_str = Integer.toString(key_value);
+    return new Callable<Boolean>() {
+      public Boolean call() {
+        GetItemRequest gir = new GetItemRequest()
+          .addKeyEntry(key_attr, new AttributeValue().withN(i_str));
+        gir.setTableName(tableName);
+        GetItemResult get_result = client.getItem(gir);
+        String result = null;
+        try {
+          result = get_result.getItem().get(v_attr).getS();
+          if (result != null)
+            return result.equals(v_value);
+        }
+        catch (Throwable t) { ; }
+        return false;
+      }
+    };
+  }
+  protected Callable<Boolean> itemDoesNotExist(final String key_attr, int key_value) {
+    final String i_str = Integer.toString(key_value);
+    return new Callable<Boolean>() {
+      public Boolean call() {
+        GetItemRequest gir = new GetItemRequest()
+          .addKeyEntry(key_attr, new AttributeValue().withN(i_str));
+        gir.setTableName(tableName);
+        GetItemResult get_result = client.getItem(gir);
+        return get_result.getItem() == null;
+      }
+    };
+  }
+
 
 }
