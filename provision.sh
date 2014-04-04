@@ -102,5 +102,5 @@ chown -R vagrant:vagrant riak
 # Start Riak
 pushd riak/rel/riak
 ulimit -n 4096
-./bin/riak start
-./bin/riak ping
+su -c './bin/riak start' vagrant
+su -c './bin/riak ping' vagrant
