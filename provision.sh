@@ -87,7 +87,7 @@ fi
 if [ ! -d riak ]; then
   su -c 'git clone -b rs-rinamo-vagrant http://github.com/basho/riak.git' vagrant
   pushd riak
-  su -c 'make rel' vagrant
+  su -c 'make locked-all rel' vagrant
   pushd rel/riak
   echo 'anti_entropy = passive' >> etc/riak.conf
   echo 'log.console.level = debug' >> etc/riak.conf
