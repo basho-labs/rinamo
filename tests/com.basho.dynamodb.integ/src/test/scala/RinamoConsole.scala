@@ -30,7 +30,7 @@ object RinamoConsole {
      val creds = new PropertiesCredentials(input_stream)
      val client = new AmazonDynamoDBClient(creds)
      
-     if (host.length() > 0) {
+     if (host != null && host.length() > 0) {
        client.setEndpoint(protocol + "://" + host + ":" + port)
      }
      return client

@@ -98,9 +98,8 @@ object Table {
 
     request.setKeyConditions(key_conditions)
     request.setTableName(table_name)
-    
+
     return client.query(request)
-    
   }
 
 }
