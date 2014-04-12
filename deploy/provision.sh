@@ -7,6 +7,13 @@ if ! dpkg --get-selections | grep -q "libpam0g-dev"; then
   apt-get install -y libpam0g-dev
 fi
 
+if [ ! -f "${HOME}/.ssh/config" ]; then
+  cat <<EOF >> .ssh/config
+Host github.com
+  StrictHostKeyChecking no
+EOF
+fi
+
 # Riak
 if [ ! -d riak ]; then
   su --preserve-environment -c "git clone -b rs-rinamo-vagrant git@github.com:basho/riak.git" vagrant
