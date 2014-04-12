@@ -41,8 +41,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|
 
       chef.json = { }
     end
-
-    config.vm.provision "shell", path: "deploy/provision.sh"
   end
 
   cluster.vm.define "rinamo-dev".to_sym do |config|
