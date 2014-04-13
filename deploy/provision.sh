@@ -4,7 +4,7 @@ set -e
 
 # libpam
 if ! dpkg --get-selections | grep -q "libpam0g-dev"; then
-  apt-get install -y libpam0g-dev
+  apt-get update -qq && apt-get install -y libpam0g-dev
 fi
 
 if [ ! -f "${HOME}/.ssh/config" ]; then
