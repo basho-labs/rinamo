@@ -49,7 +49,7 @@ environment can be built once, and made into a Vagrant base box:
 
 ```bash
 $ RINAMO_USE_CACHE=1 vagrant up rinamo-base
-$ vagrant package
+$ vagrant package rinamo-base
 $ vagrant box add rinamo-base package.box
 $ rm package.box
 ```
