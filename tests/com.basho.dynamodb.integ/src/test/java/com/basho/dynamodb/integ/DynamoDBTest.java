@@ -3,8 +3,10 @@ package com.basho.dynamodb.integ;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import org.junit.After;
@@ -28,22 +30,42 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 public class DynamoDBTest {
   protected AmazonDynamoDBClient client;
   protected String tableName;
+  
+  public static String getConfigValue(String key, Properties props) {
+    String rtnval = null;
+    if (props.containsKey(key)) {
+      rtnval = props.getProperty(key);
+    }
+    rtnval = System.getenv(key.toUpperCase());
+    return rtnval;
+  }
 
   @Before
   public void before() {
     AWSCredentials creds = null;
+    Properties props = null;
     try {
-    creds = new PropertiesCredentials(
-                DynamoDBTest.class.getResourceAsStream("AwsCredentials.properties"));
+      InputStream in = DynamoDBTest.class.getResourceAsStream("AwsCredentials.properties");
+      in.mark(Integer.MAX_VALUE);
+      props = new Properties();
+      props.load(in);
+      in.reset();
+      creds = new PropertiesCredentials(in);
     }
-    catch(IOException e) {
+    catch (IOException e) {
       e.printStackTrace();
     }
+    
+    String protocol = getConfigValue("protocol", props);
+    String host = getConfigValue("host", props);
+    String port = getConfigValue("port", props);
 
     client = new AmazonDynamoDBClient(creds);
-    client.setEndpoint("http://localhost:8000");
+    if (host != null && host.length() > 0) {
+      client.setEndpoint(protocol + "://" + host + ":" + port);
+    }
   }
-  
+
   @After
   public void after() {
   }

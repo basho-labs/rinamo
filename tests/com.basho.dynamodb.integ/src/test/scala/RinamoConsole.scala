@@ -7,6 +7,8 @@ import com.amazonaws.services.dynamodbv2.model._
 
 import java.util.Properties
 
+import com.basho.dynamodb.integ.DynamoDBTest
+
 object RinamoConsole {
    def main(args : Array[String]) {
      val b = new Boot()
@@ -16,15 +18,15 @@ object RinamoConsole {
    }
    
    def config():AmazonDynamoDBClient = {
-     val input_stream = classOf[com.basho.dynamodb.integ.DynamoDBTest]
+     val input_stream = classOf[DynamoDBTest]
                           .getResourceAsStream("AwsCredentials.properties")
 
      input_stream.mark(Integer.MAX_VALUE)
      val props = new Properties()
      props.load(input_stream)
-     val protocol = props.getProperty("protocol")
-     val host = props.getProperty("host")
-     val port = props.getProperty("port")
+     val protocol = DynamoDBTest.getConfigValue("protocol", props)
+     val host = DynamoDBTest.getConfigValue("host", props)
+     val port = DynamoDBTest.getConfigValue("port", props)
      input_stream.reset()
 
      val creds = new PropertiesCredentials(input_stream)
