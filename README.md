@@ -32,6 +32,13 @@ $ vagrant plugin install vagrant-omnibus
 $ vagrant plugin install vagrant-cachier (Use RINAMO_USE_CACHE to enable)
 ```
 
+**Note**: If you're using Vagrant 1.5+, use the following command to install
+`vagrant-berkshelf`:
+
+```bash
+$ vagrant plugin install vagrant-berkshelf --plugin-version 2.0.0.rc3
+```
+
 ### Add your local SSH key to `ssh-agent`
 
 The `Vagrantfile` is configured to enable agent forwarding over SSH, but your
