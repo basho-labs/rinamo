@@ -36,7 +36,10 @@ public class DynamoDBTest {
     if (props.containsKey(key)) {
       rtnval = props.getProperty(key);
     }
-    rtnval = System.getenv(key.toUpperCase());
+    String possible_env_prop = key.toUpperCase();
+    if (System.getenv(possible_env_prop) != null) {
+      rtnval = System.getenv(key.toUpperCase());
+    }
     return rtnval;
   }
 
