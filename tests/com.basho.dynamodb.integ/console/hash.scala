@@ -1,4 +1,4 @@
-Table.create("books", "Id", "N", Some("Title"), Some("S"))
+Table.create("books_hash", "Id", "N")
 
 val i1 = new Item()
 i1.add("Id", "N", "101")
@@ -12,8 +12,8 @@ val i3 = new Item()
 i3.add("Id", "N", "101")
 i3.add("Title", "S", "Tale of Two Databases")
 
-Table.put("books", i1)
-Table.put("books", i2)
-Table.put("books", i3)
+Table.put("books_hash", i1)
+Table.put("books_hash", i2)
+Table.put("books_hash", i3)
 
-Table.query("books", "101", "GT", "Tale")
+Table.get("books_hash", "Id", "N", "101")
