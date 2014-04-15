@@ -4,10 +4,6 @@
          decode_list_tables/1, decode_put_item/1,
          decode_item_request/1]).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
-
 decode_batch_get_item(Json) ->
   ok.
 
@@ -178,6 +174,7 @@ decode_attribute_values([Attribute|Rest], Acc) ->
 
 
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 decode_batch_get_item_test() ->
     Actual = decode_batch_get_item([]),

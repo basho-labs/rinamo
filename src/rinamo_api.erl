@@ -6,10 +6,6 @@
 
 -include_lib("rinamo/include/rinamo.hrl").
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
-
 %%% Table Operations %%%
 
 % ---- Create Table ---- %
@@ -138,6 +134,7 @@ delete_item(DynamoRequest, AWSContext) ->
   [{}].
 
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 table_fixture() ->
   {_, Fixture} = file:read_file("../tests/fixtures/table.json"),

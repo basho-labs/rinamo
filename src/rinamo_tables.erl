@@ -5,10 +5,6 @@
 
 -include_lib("rinamo/include/rinamo.hrl").
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
-
 create_table(Table, RawSchema, AWSContext) ->
   lager:debug("RawSchema: ~p~n", [RawSchema]),
 
@@ -115,6 +111,7 @@ update_table_list(TableList, Table) ->
   jsx:encode(lists:usort(lists:append(TableList, [Table]))).
 
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 create_table_test() ->
   meck:new(rinamo_kv, [non_strict]),

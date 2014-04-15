@@ -7,10 +7,6 @@
 
 -define(AMZ_AUTH_HEADER,<<"authorization">>).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
-
 execute(Req, Env) ->
   {AuthToken, _} = cowboy_req:header(?AMZ_AUTH_HEADER, Req),
 
@@ -53,6 +49,7 @@ tokenize_auth_header(HeaderValue) ->
 
 
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 auth_fixture() ->
   {_, Fixture} = file:read_file("../tests/fixtures/access_key.txt"),

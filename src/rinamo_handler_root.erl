@@ -87,7 +87,6 @@ extract_operation(OpHeader) ->
 
 
 -ifdef(TEST).
-
 -include_lib("eunit/include/eunit.hrl").
 
 extract_operation_test() ->
