@@ -5,6 +5,8 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+-include("rinamo.hrl").
+
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
@@ -13,6 +15,7 @@ start(_StartType, _StartArgs) ->
     case rinamo_config:is_enabled() of
         true ->
             start_cowboy(),
+            configure_riak(),
             rinamo_sup:start_link();
         _ ->
             ok
@@ -41,11 +44,11 @@ start_cowboy() ->
         [
             {env, [{dispatch, Dispatch}]},
             {middlewares, [
-              cowboy_router,
-              rinamo_middleware_reqid,
-              rinamo_middleware_auth,
-              rinamo_middleware_metering,
-              cowboy_handler
+                cowboy_router,
+                rinamo_middleware_reqid,
+                rinamo_middleware_auth,
+                rinamo_middleware_metering,
+                cowboy_handler
             ]}
         ]
     ).
@@ -55,3 +58,7 @@ get_routes() ->
         {<<"/ping">>, rinamo_handler_ping, []},
         {<<"/">>, rinamo_handler_root, []}
     ]}].
+
+configure_riak() ->
+    riak_core_bucket_type:create(?RINAMO_SET_TYPE, [{datatype, set}]),
+    riak_core_bucket_type:activate(?RINAMO_SET_TYPE).

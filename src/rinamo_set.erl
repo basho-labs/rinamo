@@ -4,7 +4,8 @@
 -export([add/4, remove/4]).
 -export([value/3]).
 
--include_lib("rinamo/include/rinamo_kv_types.hrl").
+-include("rinamo.hrl").
+-include("rinamo_kv_types.hrl").
 
 client() ->
   {ok,C} = riak:local_client(),
@@ -38,7 +39,7 @@ read_and_modify(Client, Bucket, Key, Object, Op) ->
 
 %% todo:  get rid of this fun
 get(Client, Bucket, Key) ->
-    Client:get({<<"set_bucket_type">>, Bucket}, Key, []).
+    Client:get({?RINAMO_SET_TYPE, Bucket}, Key, []).
 
 read(Client, Bucket, Key) ->
     GetResult = get(Client, Bucket, Key),
@@ -48,7 +49,7 @@ read(Client, Bucket, Key) ->
             {{Ctx, _}, _} = riak_kv_crdt:value(RO, riak_dt_orswot),
             {RO, Ctx};
         _ ->
-            {riak_kv_crdt:new({<<"set_bucket_type">>, Bucket}, Key, riak_dt_orswot), undefined}
+            {riak_kv_crdt:new({?RINAMO_SET_TYPE, Bucket}, Key, riak_dt_orswot), undefined}
     end.
 
 modify(Client, RO, CrdtOp) ->
