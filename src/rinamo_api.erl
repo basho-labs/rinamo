@@ -136,7 +136,7 @@ delete_item(DynamoRequest, AWSContext) ->
 -include_lib("eunit/include/eunit.hrl").
 
 table_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/table.json"),
+    {_, Fixture} = file:read_file("../tests/fixtures/hash_table.json"),
     Fixture.
 
 item_fixture() ->

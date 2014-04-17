@@ -2,20 +2,21 @@
 
 -export([put_item/3, get_item/3, delete_item/3]).
 
+-export([get_keyschema/2]).
+
 -include("rinamo.hrl").
 
 -spec put_item(binary(), any(), #state{ user_key :: binary() }) -> ok.
 put_item(Table, Item, AWSContext) ->
     UserKey = AWSContext#state.user_key,
-    {KeyAttribute, KeyType} = get_keyschema(Table, AWSContext),
-    [{FieldType, KeyValue}] = kvc:path(KeyAttribute, Item),
-
-    lager:debug("KeyAttribute: ~p, KeyType: ~p, FieldType: ~p, KeyValue: ~p",
-                [KeyAttribute, KeyType, FieldType, KeyValue]),
-
-    case KeyType of
-        <<"HASH">> -> store_hash_key(UserKey, Table, KeyValue, Item);
-        <<"RANGE">> -> ok
+    case get_keyschema(Table, AWSContext) of
+        [{HashKeyAttribute, <<"HASH">>}] ->
+            [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
+            store_hash_key(UserKey, Table, HashKeyValue, Item);
+        [{HashKeyAttribute, <<"HASH">>}, {RangeKeyAttribute, <<"RANGE">>}] ->
+            [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
+            [{RangeFieldType, RangeKeyValue}] = kvc:path(RangeKeyAttribute, Item),
+            store_range_key(UserKey, Table, HashKeyValue, RangeKeyValue, Item)
     end.
 
 -spec get_item(binary(), binary(), #state{ user_key :: binary() }) -> any().
@@ -49,39 +50,42 @@ store_hash_key(User, Table, [Key|Rest], Item) ->
     store_hash_key(User, Table, Rest, Item),
     store_hash_key(User, Table, Key, Item);
 store_hash_key(User, Table, Key, Item) ->
-    lager:debug("Storing: ~p:", [Key]),
+    lager:debug("Storing as Hash Key: ~p:", [Key]),
 
     B = erlang:iolist_to_binary([User, ?RINAMO_SEPARATOR, Table]),
     Value = jsx:encode(Item),
 
     _ = rinamo_kv:put(rinamo_kv:client(), B, Key, Value, "application/json"),
-
     ok.
 
-% range key support:  todo
-% fix from:  return the first key schema that it finds
-%  - was returning attr name + key type
-%  - instead return:
-%  -   a list of [{AttrName, KeyType}, {AttrName, KeyType}]
-%
--spec get_keyschema(binary(), #state{ user_key :: binary() }) -> tuple().
-get_keyschema(Table, AWSContext) ->
+store_range_key(UserKey, Table, HashKeyValue, RangeKeyValue, Item) ->
+    lager:debug("Storing as Range Key: ~p::~p:", [HashKeyValue, RangeKeyValue]),
+    throw(operation_not_implemented).
+
+% returns an ordered set of tuples
+-spec get_keyschema(binary(), #state{ user_key :: binary() }) -> [tuple()].
+get_keyschema(Table, AWSContext) when is_binary(Table) ->
     TD = rinamo_tables:load_table_def(Table, AWSContext),
     case TD of
       notfound -> throw(table_missing);
       _ ->
-          % fix bad match for range tables
-          [AttributeName] = kvc:path("KeySchema.AttributeName", TD),
-          [KeyType] = kvc:path("KeySchema.KeyType", TD),
-          {AttributeName, KeyType}
-    end.
+          get_keyschema(kvc:path("KeySchema", TD), [])
+    end;
+get_keyschema([], Acc) ->
+    % hash comes before range
+    lists:keysort(2, Acc);
+get_keyschema([Attribute|Rest], Acc) ->
+    % attribute_name comes before key_type
+    OrderedAttr = lists:keysort(1, Attribute),
+    [{_, AttributeName}, {_, KeyType}] = OrderedAttr,
+    get_keyschema(Rest, [{AttributeName, KeyType} | Acc]).
 
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
-table_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/table.json"),
+hash_table_fixture() ->
+    {_, Fixture} = file:read_file("../tests/fixtures/hash_table.json"),
     Fixture.
 
 item_fixture() ->
@@ -90,7 +94,7 @@ item_fixture() ->
 
 put_item_test() ->
     meck:new([rinamo_tables, rinamo_kv], [non_strict]),
-    meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(table_fixture())),
+    meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(hash_table_fixture())),
     meck:expect(rinamo_kv, client, 0, ok),
     meck:expect(rinamo_kv, put, 5, ok),
 

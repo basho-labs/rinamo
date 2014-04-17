@@ -52,10 +52,14 @@ handle(Req, State) ->
                 Result = (catch erlang:apply(Module, Function, [jsx:decode(Body), State])),
                 lager:debug("Operation Result: ~p~n", [Result]),
                 case Result of
-                    _ when is_atom(Result) ->
+                    {'EXIT', Reason} -> % unanticipated errors
+                        lager:error("General Protection Fault: ~p~n", [Reason]),
+                        ErrorMsg = rinamo_error:make(internal_server_error),
+                        rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req);
+                    _ when is_atom(Result) -> % anticipated errors
                         ErrorMsg = rinamo_error:make(Result),
                         rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req);
-                    _ ->
+                    _ -> % normal response
                         rinamo_response:send(200, Result, Req)
                 end
         end
