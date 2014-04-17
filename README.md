@@ -69,6 +69,13 @@ Now that the `rinamo-base` box is built, Rinamo itself can be provisioned:
 $ vagrant up rinamo-dev
 ```
 
+Once running, Rinamo can be updated at any time by rebuilding the Riak
+release by running the provision command:
+
+```bash
+$ vagrant provision rinamo-dev
+```
+
 ## Additional documentation
 
 - [NOTES.md](src/NOTES.md)
