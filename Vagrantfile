@@ -16,8 +16,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|
   cluster.berkshelf.enabled = true
 
   cluster.vm.define "rinamo-base".to_sym do |config|
-    config.vm.box = "opscode-ubuntu-12.04"
-    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    config.vm.box = "ubuntu/trusty64"
     config.vm.provider "virtualbox" do |vb|
         vb.customize ["modifyvm", :id, "--cpus", "2"]
         vb.customize ["modifyvm", :id, "--pae", "on"]
