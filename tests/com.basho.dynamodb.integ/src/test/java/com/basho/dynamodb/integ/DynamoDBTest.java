@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import org.junit.After;
 import org.junit.Before;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -63,7 +64,8 @@ public class DynamoDBTest {
     String host = getConfigValue("host", props);
     String port = getConfigValue("port", props);
 
-    client = new AmazonDynamoDBClient(creds);
+    ClientConfiguration config = new ClientConfiguration();
+    client = new AmazonDynamoDBClient(creds, config);
     if (host != null && host.length() > 0) {
       client.setEndpoint(protocol + "://" + host + ":" + port);
     }
