@@ -16,22 +16,29 @@ execute(Req, Env) ->
                 {<<"/ping">>, _} -> {ok, Req, Env};
                 _ ->
                     ErrorMsg = rinamo_error:make(missing_authentication_token),
-                    rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
-                    {halt, Req}
+                    {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
+                    {halt, NextReq}
             end;
         _ ->
-            AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
+            case cowboy_req:method(Req) of
+                {<<"POST">>, _} ->
+                    AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
 
-            {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
-            lager:debug("Auth HandlerOpts: ~p~n", [HandlerOpts]),
-            State = case HandlerOpts of
-                [] -> #state{user_key = AccessKey};
-                _ -> HandlerOpts#state{user_key = AccessKey}
-            end,
+                    {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
+                    lager:debug("Auth HandlerOpts: ~p~n", [HandlerOpts]),
+                    State = case HandlerOpts of
+                        [] -> #state{user_key = AccessKey};
+                        _ -> HandlerOpts#state{user_key = AccessKey}
+                    end,
 
-            NewEnv = [{handler_opts, State} | PartialEnv],
+                    NewEnv = [{handler_opts, State} | PartialEnv],
 
-            {ok, Req, NewEnv}
+                    {ok, Req, NewEnv};
+                _ ->
+                    ErrorMsg = rinamo_error:make(incomplete_signature),
+                    {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
+                    {halt, NextReq}
+            end
     end.
 
 %% Internal
