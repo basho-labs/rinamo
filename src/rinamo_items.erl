@@ -2,8 +2,6 @@
 
 -export([put_item/3, get_item/3, delete_item/3]).
 
--export([get_keyschema/2]).
-
 -include("rinamo.hrl").
 
 -spec put_item(binary(), any(), #state{ user_key :: binary() }) -> ok.
