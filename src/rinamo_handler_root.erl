@@ -33,7 +33,7 @@ handle(Req, State) ->
               <<"PutItem">> -> {rinamo_api, put_item};
               <<"UpdateItem">> -> {error, unimplemented};
               <<"DeleteItem">> -> {rinamo_api, delete_item};
-              <<"Query">> -> {error, unimplemented};
+              <<"Query">> -> {rinamo_api, query};
               <<"Scan">> -> {error, unimplemented};
               <<"BatchGetItem">> -> {error, unimplemented};
               <<"BatchWriteItem">> -> {error, unimplemented};

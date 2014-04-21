@@ -1,8 +1,14 @@
 -module(rinamo_api).
 
--export([create_table/2, list_tables/2,
-         describe_table/2, delete_table/2,
-         put_item/2, get_item/2, delete_item/2]).
+-export([
+    create_table/2,
+    list_tables/2,
+    describe_table/2,
+    delete_table/2,
+    put_item/2,
+    get_item/2,
+    delete_item/2,
+    query/2]).
 
 -include("rinamo.hrl").
 
@@ -130,6 +136,22 @@ delete_item(DynamoRequest, AWSContext) ->
 
     rinamo_items:delete_item(TableName, Key, AWSContext),
 
+    [{}].
+
+% ---- Query ---- %
+
+query(DynamoRequest, AWSContext) ->
+    [{attributes_to_get, _}, {consistent_read, _}, {exclusive_start, _},
+    {index_name, _}, {key_conditions, KeyConditions}, {limit, _},
+    {return_consumed_capacity, _}, {scan_index_forward, _}, {select, _},
+    {tablename, TableName}] = rinamo_codec:decode_query(DynamoRequest),
+
+    % Key Details
+    [{HashKeyAttr,[{HashKeyType, HashKeyValue}], HashKeyOperator},
+    {RangeKeyAttr,[{RangeKeyType, RangeKeyValue}], RangeKeyOperator}] = KeyConditions,
+    lager:debug("Query Decode: ~p~n", [KeyConditions]),
+    lager:debug("Hash Key Details: ~p,~p,~p,~p~n", [HashKeyAttr, HashKeyType, HashKeyValue, HashKeyOperator]),
+    lager:debug("Range Key Details: ~p,~p,~p,~p~n", [RangeKeyAttr, RangeKeyType, RangeKeyValue, RangeKeyOperator]),
     [{}].
 
 -ifdef(TEST).

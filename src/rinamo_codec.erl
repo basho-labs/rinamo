@@ -1,8 +1,12 @@
 -module(rinamo_codec).
 
--export([decode_create_table/1, decode_table_name/1,
-         decode_list_tables/1, decode_put_item/1,
-         decode_item_request/1]).
+-export([
+    decode_create_table/1,
+    decode_table_name/1,
+    decode_list_tables/1,
+    decode_put_item/1,
+    decode_item_request/1,
+    decode_query/1]).
 
 decode_batch_get_item(Json) ->
     ok.
@@ -85,16 +89,16 @@ decode_query(Json) ->
     Select = kvc:path("Select", Json),
     TableName = kvc:path("TableName", Json),
 
-    [{"AttributesToGet", AttributesToGet},
-     {"ConsistentRead", ConsistentRead},
-     {"ExclusiveStartKey", ExclusiveStartKey},
-     {"IndexName", IndexName},
-     {"KeyConditions", KeyConditions},
-     {"Limit", Limit},
-     {"ReturnConsumedCapacity", ReturnConsumedCapacity},
-     {"ScanIndexForward", ScanIndexForward},
-     {"Select", Select},
-     {"TableName", TableName}].
+    [{attributes_to_get, AttributesToGet},
+     {consistent_read, ConsistentRead},
+     {exclusive_start, ExclusiveStartKey},
+     {index_name, IndexName},
+     {key_conditions, KeyConditions},
+     {limit, Limit},
+     {return_consumed_capacity, ReturnConsumedCapacity},
+     {scan_index_forward, ScanIndexForward},
+     {select, Select},
+     {tablename, TableName}].
 
 decode_scan(Json) ->
     ok.
@@ -208,7 +212,7 @@ decode_item_request_test() ->
     io:format("~p", [Actual]),
 
     Expected = [{attributes_to_get,[<<"string">>]},
-                {consistent_read,false},
+                {consistent_read, false},
                 {keys, [{"key1",{<<"B">>,<<"blob">>}},
                         {"key2",{<<"BS">>,[<<"blob">>]}},
                         {"key3",{<<"N">>,<<"string">>}},
@@ -399,14 +403,14 @@ decode_query_test() ->
         },
     \"Limit\": \"number\",
     \"ReturnConsumedCapacity\": \"string\",
-    \"ScanIndexForward\": \"boolean\",
+    \"ScanIndexForward\": false,
     \"Select\": \"string\",
     \"TableName\": \"string\"
     }">>,
     Actual = decode_query(jsx:decode(Json_Bin)),
-    Expected = [{"AttributesToGet", [<<"string">>]},
-                {"ConsistentRead", false},
-                {"ExclusiveStartKey", [
+    Expected = [{attributes_to_get, [<<"string">>]},
+                {consistent_read, false},
+                {exclusive_start, [
                     {<<"Key1">>, [{<<"B">>, <<"blob">>}]},
                     {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}]},
                     {<<"Key3">>, [{<<"N">>, <<"string">>}]},
@@ -414,8 +418,8 @@ decode_query_test() ->
                     {<<"Key5">>, [{<<"S">>, <<"string">>}]},
                     {<<"Key6">>, [{<<"SS">>, [<<"string">>]}]}
                 ]},
-                {"IndexName", <<"string">>},
-                {"KeyConditions", [
+                {index_name, <<"string">>},
+                {key_conditions, [
                     {<<"Key1">>, [{<<"B">>, <<"blob">>}], <<"string">>},
                     {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}], <<"string">>},
                     {<<"Key3">>, [{<<"N">>, <<"string">>}], <<"string">>},
@@ -423,11 +427,11 @@ decode_query_test() ->
                     {<<"Key5">>, [{<<"S">>, <<"string">>}], <<"string">>},
                     {<<"Key6">>, [{<<"SS">>, [<<"string">>]}], <<"string">>}
                 ]},
-                {"Limit", <<"number">>},
-                {"ReturnConsumedCapacity", <<"string">>},
-                {"ScanIndexForward", <<"boolean">>},
-                {"Select", <<"string">>},
-                {"TableName", <<"string">>}],
+                {limit, <<"number">>},
+                {return_consumed_capacity, <<"string">>},
+                {scan_index_forward, false},
+                {select, <<"string">>},
+                {tablename, <<"string">>}],
     io:format("Actual: ~p", [Actual]),
     ?assertEqual(Expected, Actual).
 
