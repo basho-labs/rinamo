@@ -16,4 +16,4 @@ Table.put("books_range", i1)
 Table.put("books_range", i2)
 Table.put("books_range", i3)
 
-Table.query("books_range", "101", "GT", "Tale")
+Table.query("books_range", "Id", "101", "Title", "GT", "Tale")

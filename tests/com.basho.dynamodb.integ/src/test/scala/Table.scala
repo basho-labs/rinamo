@@ -80,21 +80,20 @@ object Table {
     return client.deleteItem(request)
   }
 
-  def query(table_name:String, range_key:String, operator:String, range_value:String):QueryResult = {
+  def query(table_name:String, hash_key:String, hash_value:String, range_key:String, operator:String, range_value:String):QueryResult = {
     val request = new QueryRequest()
 
     val hash_condition = new Condition()
       .withComparisonOperator(ComparisonOperator.EQ.toString())
-      .withAttributeValueList(new AttributeValue().withN(range_key))
+      .withAttributeValueList(new AttributeValue().withN(hash_value))
 
-    // any string val > "c"
     val range_condition = new Condition()
       .withComparisonOperator(ComparisonOperator.fromValue(operator))
       .withAttributeValueList(new AttributeValue().withS(range_value))
 
     var key_conditions:Map[String, Condition] = Map()
-    key_conditions += (("Id", hash_condition))
-    key_conditions += (("Title", range_condition))
+    key_conditions += ((hash_key, hash_condition))
+    key_conditions += ((range_key, range_condition))
 
     request.setKeyConditions(key_conditions)
     request.setTableName(table_name)
