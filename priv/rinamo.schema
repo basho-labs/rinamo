@@ -40,3 +40,13 @@
   {datatype, integer},
   {validators, ["greater_than_zero"]}
 ]}.
+
+%% Rinamo Indexing Strategy
+%% @doc rinamo.index tells Rinamo which indexing stragegy to use.
+%% @datatype enum rinamo_idx_one_for_one, rinamo_idx_item_proxies
+{mapping, "rinamo.index.strategy", "rinamo.index.strategy", [
+  {default, rinamo_idx_one_for_one},
+  {datatype, {enum, [
+    rinamo_idx_one_for_one,
+    rinamo_idx_item_proxies]}}
+]}.
