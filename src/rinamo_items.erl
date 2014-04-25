@@ -1,6 +1,10 @@
 -module(rinamo_items).
 
--export([put_item/3, get_item/3, delete_item/3]).
+-export([
+    put_item/3,
+    get_item/3,
+    delete_item/3,
+    query/2]).
 
 -include("rinamo.hrl").
 
@@ -14,7 +18,7 @@ put_item(Table, Item, AWSContext) ->
         [{HashKeyAttribute, <<"HASH">>}, {RangeKeyAttribute, <<"RANGE">>}] ->
             [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
             [{RangeFieldType, RangeKeyValue}] = kvc:path(RangeKeyAttribute, Item),
-            store_range_key(UserKey, Table, HashKeyValue, RangeKeyValue, Item)
+            store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, Item)
     end.
 
 -spec get_item(binary(), binary(), #state{ user_key :: binary() }) -> any().
@@ -33,11 +37,37 @@ get_item(Table, Key, AWSContext) ->
 -spec delete_item(binary(), binary(), #state{ user_key :: binary() }) -> ok.
 delete_item(Table, Key, AWSContext) ->
     UserKey = AWSContext#state.user_key,
-    B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
-
-    _ = rinamo_kv:delete(rinamo_kv:client(), B, Key),
+    _ = case Key of
+        [{_, {_, HashKeyVal}}] ->
+            B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
+            rinamo_kv:delete(rinamo_kv:client(), B, HashKeyVal);
+        [{_, {_, HashKeyVal}}, {RangeKeyAttribute, {_, RangeKeyVale}}] ->
+            % ------- begin index concern
+            % ------- end index concern
+            ok
+    end,
 
     ok.
+
+query(Query, AWSContext) ->
+    UserKey = AWSContext#state.user_key,
+    {TableName, RangeKeyOperator,
+     {HashKeyAttr, HashKeyType, HashKeyValue},
+     {RangeKeyAttr, RangeKeyType, RangeKeyValue}} = Query,
+
+    % ------- begin index concern
+
+    M = rinamo_config:get_index_strategy(),
+    F = query,
+    A = [
+        erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, TableName, ?RINAMO_SEPARATOR, RangeKeyAttr]),
+        HashKeyValue,
+        {RangeKeyAttr, RangeKeyOperator, RangeKeyValue}
+    ],
+    lager:debug("Index Strat: ~p~n", [M]),
+    erlang:apply(M, F, A).
+
+    % ------- end index concern
 
 %% Internal
 
@@ -56,9 +86,25 @@ store_hash_key(User, Table, Key, Item) ->
     _ = rinamo_kv:put(rinamo_kv:client(), B, Key, Value, "application/json"),
     ok.
 
-store_range_key(UserKey, Table, HashKeyValue, RangeKeyValue, Item) ->
+store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, Item) ->
     lager:debug("Storing as Range Key: ~p::~p:", [HashKeyValue, RangeKeyValue]),
-    throw(operation_not_implemented).
+
+    % ------- begin index concern
+
+    StrategyModule = rinamo_config:get_index_strategy(),
+    M = rinamo_config:get_index_strategy(),
+    F = store,
+    A = [
+        erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table, ?RINAMO_SEPARATOR, RangeKeyAttribute]),
+        HashKeyValue,
+        RangeKeyValue,
+        jsx:encode(Item)
+    ],
+    Result = erlang:apply(M, F, A),
+
+    % ------- end index concern
+
+    ok.
 
 % returns an ordered set of tuples
 -spec get_keyschema(binary(), #state{ user_key :: binary() }) -> [tuple()].
@@ -124,10 +170,12 @@ delete_item_test() ->
     meck:expect(rinamo_kv, delete, 3, {value, <<"[\"Some_Item_Def_JSON_Here\"]">>}),
 
     Table = <<"Item Table">>,
-    Key = <<"Some_Item_Key">>,
+    Keys = [
+        {<<"HASH">>, {<<"S">>, <<"Some_Item_Key">>}}
+    ],
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
-    Actual = delete_item(Table, Key, AWSContext),
+    Actual = delete_item(Table, Keys, AWSContext),
     Expected = ok,
     ?assertEqual(Expected, Actual),
 

@@ -6,7 +6,23 @@
     decode_list_tables/1,
     decode_put_item/1,
     decode_item_request/1,
-    decode_query/1]).
+    decode_query/1,
+    decode_rinamo_keypath/2]).
+
+-include("rinamo.hrl").
+
+decode_rinamo_keypath([], Acc) ->
+    Acc;
+decode_rinamo_keypath(Binary, Acc) when is_binary(Binary) ->
+    List = binary:bin_to_list(Binary),
+    decode_rinamo_keypath(List, Acc);
+decode_rinamo_keypath(List, Acc) when is_list(List) ->
+    case lists:splitwith(fun(X) -> X /= ?RINAMO_SEPARATOR end, List) of
+        {First, [_ | Last]} ->
+            decode_rinamo_keypath(Last, lists:append(Acc, [First]));
+        {Last, []} ->
+            decode_rinamo_keypath([], lists:append(Acc, [Last]))
+    end.
 
 decode_batch_get_item(Json) ->
     ok.

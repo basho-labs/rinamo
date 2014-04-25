@@ -131,11 +131,7 @@ delete_item(DynamoRequest, AWSContext) ->
     [{attributes_to_get, _}, {consistent_read, _},
      {_, Keys}, {return_consumed_capacity, _},
      {_, TableName}] = rinamo_codec:decode_item_request(DynamoRequest),
-
-    [{_, {_, Key}}] = Keys,
-
-    rinamo_items:delete_item(TableName, Key, AWSContext),
-
+    rinamo_items:delete_item(TableName, Keys, AWSContext),
     [{}].
 
 % ---- Query ---- %
@@ -152,7 +148,23 @@ query(DynamoRequest, AWSContext) ->
     lager:debug("Query Decode: ~p~n", [KeyConditions]),
     lager:debug("Hash Key Details: ~p,~p,~p,~p~n", [HashKeyAttr, HashKeyType, HashKeyValue, HashKeyOperator]),
     lager:debug("Range Key Details: ~p,~p,~p,~p~n", [RangeKeyAttr, RangeKeyType, RangeKeyValue, RangeKeyOperator]),
-    [{}].
+
+    Query = {TableName, RangeKeyOperator,
+             {HashKeyAttr, HashKeyType, HashKeyValue},
+             {RangeKeyAttr, RangeKeyType, RangeKeyValue}},
+
+    % TODO: more validation
+    %  - Value must not be empty string
+    %  - Range condition must match range key
+    %  - Error if range condition not specified for table using range key
+    %  -
+    case HashKeyOperator of
+        <<"EQ">> ->
+            Result = rinamo_items:query(Query, AWSContext),
+            lager:debug("Query Result: ~p~n", [Result]),
+            [{}];
+        _ -> throw(validation_hash_condition)
+    end.
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
