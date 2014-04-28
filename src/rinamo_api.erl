@@ -146,7 +146,7 @@ query(DynamoRequest, AWSContext) ->
 
     Result = rinamo_items:query(TableName, KeyConditions, AWSContext),
     lager:debug("Query Result: ~p~n", [Result]),
-    [{}].
+    [{<<"Items">>, Result}, {<<"Count">>, length(Result)}].
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").

@@ -44,12 +44,22 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
 
     % fetch all the items
     lager:debug("Fetching All Items:"),
+    ItemList = fetch_items(PartitionNS, PartitionId, RefList, []),
 
     % apply post filter conditions
     lager:debug("Apply Post Filter:"),
 
     % format for api result set
-    <<"Some Result">>.
+    ItemList.
+
+fetch_items(B, PartitionId, [], Acc) ->
+    lists:reverse(Acc);
+fetch_items(B, PartitionId, [Ref|Rest], Acc) ->
+    K = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Ref]),
+    {value, JSON} = rinamo_kv:get(rinamo_kv:client(), B, K),
+    Item = jsx:decode(JSON),
+    fetch_items(B, PartitionId, Rest, [ Item | Acc]).
+
 
 delete(I, Do, Not, Know, Yet) ->
     ok.
