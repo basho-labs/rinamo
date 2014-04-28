@@ -2,7 +2,7 @@
 
 -export([
     store/4,
-    query/3]).
+    query/4]).
 
 -include("rinamo.hrl").
 
@@ -25,10 +25,31 @@ store(PartitionNS, PartitionId, Value, Item) ->
 
     ok.
 
-query(PartitionNS, PartitionId, Query) ->
+query(PartitionNS, PartitionId, Query, Conditions) ->
     {Attribute, Operator, Value} = Query,
+    % lookup the orswot
+    RB = erlang:iolist_to_binary([<<"Rinamo">>, ?RINAMO_SEPARATOR, <<"Index">>]),
+    RK = erlang:iolist_to_binary([
+        PartitionNS, ?RINAMO_SEPARATOR,
+        PartitionId, ?RINAMO_SEPARATOR,
+        <<"RefList">>]),
+    {value, RefList} = rinamo_set:value(rinamo_set:client(), RB, RK),
+
+    lager:debug("Original RefList: ~p~n", [RefList]),
+
+    % apply what parts of the filter that we can before item fetch
+    lager:debug("Apply Pre Filter:"),
+
+    lager:debug("Narrowed RefList:"),
+
+    % fetch all the items
+    lager:debug("Fetching All Items:"),
+
+    % apply post filter conditions
+    lager:debug("Apply Post Filter:"),
+
+    % format for api result set
     <<"Some Result">>.
 
-% called from rinamo_items:  UserKey
 delete(I, Do, Not, Know, Yet) ->
     ok.
