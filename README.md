@@ -76,6 +76,26 @@ release by running the provision command:
 $ vagrant provision rinamo-dev
 ```
 
+## Rinamo Client Test Console
+
+Rinamo responds to requests issued by AWS Client APIs.  Anything can be used, but we package up a scala test console for use during development.  To fire it up run the following from within the vagrant development environment:
+
+```bash
+$ /vagrant/tests/com.basho.dynamodb.integ
+$ mvn test-compile scala:console; reset
+```
+Then run commands like this:
+
+```scala
+scala> Table.create("books_range", "Id", "N", Some("Title"), Some("S"))
+res0: com.amazonaws.services.dynamodbv2.model.CreateTableResult = { ...
+
+scala> Table.list()
+res1: List[String] = List(books_range)
+```
+
+For more examples, refer to [the console examples](https://github.com/basho-labs/rinamo/tree/rs-indexing/tests/com.basho.dynamodb.integ/console).
+
 ## Additional documentation
 
 - [NOTES.md](src/NOTES.md)
