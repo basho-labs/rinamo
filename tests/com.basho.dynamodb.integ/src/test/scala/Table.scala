@@ -101,7 +101,8 @@ object Table {
       hash_key:String, hash_value:String,
       range_key:Option[String] = None,
       operator:Option[String] = Some(ComparisonOperator.EQ.toString()),
-      range_value:Option[String] = None): QueryResult = {
+      range_value:Option[String] = None,
+      between_value:Option[String] = None): QueryResult = {
     val request = new QueryRequest()
 
     val hash_condition = new Condition()
@@ -113,9 +114,21 @@ object Table {
 
     range_key match {
       case Some(range_key) => {
-        val range_condition = new Condition()
-          .withComparisonOperator(ComparisonOperator.fromValue(operator.get))
-          .withAttributeValueList(new AttributeValue().withS(range_value.get))
+        val (range_condition) = between_value match {
+            case Some(between_value) => {
+              val attr_val_list = List(
+                  new AttributeValue().withS(range_value.get),
+                  new AttributeValue().withS(between_value))
+              new Condition()
+              .withComparisonOperator(ComparisonOperator.fromValue(operator.get))
+              .withAttributeValueList(attr_val_list)
+            }
+            case None => {
+              new Condition()
+              .withComparisonOperator(ComparisonOperator.fromValue(operator.get))
+              .withAttributeValueList(new AttributeValue().withS(range_value.get))
+            }
+        }
         key_conditions += ((range_key, range_condition))
       }
       case None => {}
