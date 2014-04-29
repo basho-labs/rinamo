@@ -37,26 +37,74 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
 
     lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
 
-    % apply what parts of the filter that we can before item fetch
-    % EQ | LE | LT | GE | GT | BEGINS_WITH | BETWEEN
+    PreFilteredList = pre_filter(Operands, Operator, RefList),
 
-    % lager:debug("Narrowed RefList:"),
+    ItemList = fetch_items(PartitionNS, PartitionId, PreFilteredList, []),
 
-    ItemList = fetch_items(PartitionNS, PartitionId, RefList, []),
-
-    % apply post filter conditions
+    % TODO: apply post filter conditions
 
     ItemList.
 
+delete(I, Do, Not, Know, Yet) ->
+    ok.
+
+%% Internal
+pre_filter(Operands, Operator, List) ->
+    case Operands of
+        [{OpType, OpVal}] ->
+            pre_filter(OpType, OpVal, Operator, List);
+        [{BOpType, BOpVal}, {EOpType, EOpVal}] ->
+            pre_filter(BOpType, BOpVal, EOpType, EOpVal, Operator, List);
+        _ ->
+            % TODO: error?
+            ok
+    end.
+
+pre_filter(_, OpVal, Operator, List) ->
+    case Operator of
+        <<"EQ">> ->
+            lists:filter(fun(X) -> X =:= OpVal end, List);
+        <<"LE">> ->
+            lists:filter(fun(X) -> X =< OpVal end, List);
+        <<"LT">> ->
+            lists:filter(fun(X) -> X < OpVal end, List);
+        <<"GE">> ->
+            lists:filter(fun(X) -> X >= OpVal end, List);
+        <<"GT">> ->
+            lists:filter(fun(X) -> X > OpVal end, List);
+        <<"BEGINS_WITH">> ->
+            lists:filter(
+                fun(X) ->
+                    lists:prefix(binary:bin_to_list(OpVal),
+                                 binary:bin_to_list(X)) end, List);
+        _ ->
+            % TODO: error?
+            ok
+    end.
+
+pre_filter(_, BeginVal, _, EndVal, Operator, List) ->
+    case Operator of
+        <<"BETWEEN">> ->
+            lists:filter(fun(X) -> (X >= BeginVal) and (X =< EndVal) end, List);
+        _ ->
+            % TODO: error?
+            ok
+    end.
+
 % TODO:  limit fetch to 1 MB; return LastEvaluatedKey
-fetch_items(B, PartitionId, [], Acc) ->
+fetch_items(_, _, [], Acc) ->
     lists:reverse(Acc);
 fetch_items(B, PartitionId, [Ref|Rest], Acc) ->
     K = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Ref]),
-    {value, JSON} = rinamo_kv:get(rinamo_kv:client(), B, K),
-    Item = jsx:decode(JSON),
-    fetch_items(B, PartitionId, Rest, [Item | Acc]).
-
-
-delete(I, Do, Not, Know, Yet) ->
-    ok.
+    case rinamo_kv:get(rinamo_kv:client(), B, K) of
+        {value, JSON} ->
+            Item = jsx:decode(JSON),
+            fetch_items(B, PartitionId, Rest, [Item | Acc]);
+        {error, notfound} ->
+            % either we are partitioned, or the index is dirty
+            % (we can't tell which)
+            fetch_items(B, PartitionId, Rest, Acc);
+        _ ->
+            % what else can go wrong?
+            fetch_items(B, PartitionId, Rest, Acc)
+    end.

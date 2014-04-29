@@ -66,7 +66,7 @@ query(Table, KeyConditions, AWSContext) ->
      {remaining, PostFilterConditions}] = map_key_conditions(Table, KeyConditions, AWSContext),
 
     lager:debug("Hash Key Details: ~p,~p,~p,~p~n", [HashKeyAttr, HashKeyType, HashKeyValue, HashKeyOperator]),
-    lager:debug("Range Key Details: ~p,~p,~p,~p~n", [RangeKeyAttr, RangeKeyOperands, RangeKeyOperator]),
+    lager:debug("Range Key Details: ~p,~p,~p~n", [RangeKeyAttr, RangeKeyOperands, RangeKeyOperator]),
     lager:debug("Post Filter Details: ~p~n", [PostFilterConditions]),
 
     % ------- begin index concern
