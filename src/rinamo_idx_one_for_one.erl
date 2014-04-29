@@ -26,7 +26,7 @@ store(PartitionNS, PartitionId, Value, Item) ->
     ok.
 
 query(PartitionNS, PartitionId, Query, Conditions) ->
-    {Attribute, Operator, Value} = Query,
+    {Attribute, Operands, Operator} = Query,
     % lookup the orswot
     RB = erlang:iolist_to_binary([<<"Rinamo">>, ?RINAMO_SEPARATOR, <<"Index">>]),
     RK = erlang:iolist_to_binary([
@@ -35,30 +35,27 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
         <<"RefList">>]),
     {value, RefList} = rinamo_set:value(rinamo_set:client(), RB, RK),
 
-    lager:debug("Original RefList: ~p~n", [RefList]),
+    lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
 
     % apply what parts of the filter that we can before item fetch
-    lager:debug("Apply Pre Filter:"),
+    % EQ | LE | LT | GE | GT | BEGINS_WITH | BETWEEN
 
-    lager:debug("Narrowed RefList:"),
+    % lager:debug("Narrowed RefList:"),
 
-    % fetch all the items
-    lager:debug("Fetching All Items:"),
     ItemList = fetch_items(PartitionNS, PartitionId, RefList, []),
 
     % apply post filter conditions
-    lager:debug("Apply Post Filter:"),
 
-    % format for api result set
     ItemList.
 
+% TODO:  limit fetch to 1 MB; return LastEvaluatedKey
 fetch_items(B, PartitionId, [], Acc) ->
     lists:reverse(Acc);
 fetch_items(B, PartitionId, [Ref|Rest], Acc) ->
     K = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Ref]),
     {value, JSON} = rinamo_kv:get(rinamo_kv:client(), B, K),
     Item = jsx:decode(JSON),
-    fetch_items(B, PartitionId, Rest, [ Item | Acc]).
+    fetch_items(B, PartitionId, Rest, [Item | Acc]).
 
 
 delete(I, Do, Not, Know, Yet) ->

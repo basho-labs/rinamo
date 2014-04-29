@@ -62,11 +62,11 @@ query(Table, KeyConditions, AWSContext) ->
     %    - if not a range table, ok - but have to handle that case specifically
 
     [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
-     {range, {RangeKeyAttr,[{RangeKeyType, RangeKeyValue}], RangeKeyOperator}},
+     {range, {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator}},
      {remaining, PostFilterConditions}] = map_key_conditions(Table, KeyConditions, AWSContext),
 
     lager:debug("Hash Key Details: ~p,~p,~p,~p~n", [HashKeyAttr, HashKeyType, HashKeyValue, HashKeyOperator]),
-    lager:debug("Range Key Details: ~p,~p,~p,~p~n", [RangeKeyAttr, RangeKeyType, RangeKeyValue, RangeKeyOperator]),
+    lager:debug("Range Key Details: ~p,~p,~p,~p~n", [RangeKeyAttr, RangeKeyOperands, RangeKeyOperator]),
     lager:debug("Post Filter Details: ~p~n", [PostFilterConditions]),
 
     % ------- begin index concern
@@ -76,7 +76,7 @@ query(Table, KeyConditions, AWSContext) ->
     A = [
         erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table, ?RINAMO_SEPARATOR, RangeKeyAttr]),
         HashKeyValue,
-        {RangeKeyAttr, RangeKeyOperator, RangeKeyValue},
+        {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator},
         PostFilterConditions
     ],
     lager:debug("Index Strat: ~p~n", [M]),
