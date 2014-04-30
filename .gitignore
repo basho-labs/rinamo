@@ -2,3 +2,6 @@
 deps
 ebin
 .local_dialyzer_plt
+Berksfile.lock
+.vagrant
+*.box

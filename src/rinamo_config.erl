@@ -21,5 +21,5 @@ get_num_acceptors() ->
 
 %% Internal
 get_env(Key) ->
-  {_, Value} = application:get_env(rinamo, Key),
-  Value.
+    {_, Value} = application:get_env(rinamo, Key),
+    Value.
