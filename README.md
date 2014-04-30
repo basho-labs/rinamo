@@ -1,6 +1,6 @@
 # Rinamo
 
-A DynamoDB API implementation built on Riak 2.0 + Search (Yokozuna/Solr).
+A DynamoDB API implementation built on Riak 2.0.
 
 ## Building
 
