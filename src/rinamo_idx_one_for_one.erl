@@ -73,10 +73,17 @@ pre_filter(_, OpVal, Operator, List) ->
         <<"GT">> ->
             lists:filter(fun(X) -> X > OpVal end, List);
         <<"BEGINS_WITH">> ->
+            Len = size(OpVal),
             lists:filter(
                 fun(X) ->
-                    lists:prefix(binary:bin_to_list(OpVal),
-                                 binary:bin_to_list(X)) end, List);
+                    case size(X) >= Len of
+                        true ->
+                            <<Prefix:Len/binary, _/binary>> = X,
+                            Prefix =:= OpVal;
+                        false ->
+                            false
+                    end
+                end, List);
         _ ->
             % TODO: error?
             ok
