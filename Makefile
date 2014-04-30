@@ -4,7 +4,7 @@ all: deps compile
 	./rebar compile
 
 compile: deps
-	./rebar compile
+	./rebar get-deps
 
 deps:
 	test -d deps || ./rebar get-deps

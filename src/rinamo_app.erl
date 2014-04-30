@@ -5,33 +5,60 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+-include("rinamo.hrl").
+
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-  case rinamo_config:is_enabled() of
-      true -> add_routes();
-      _ -> ok
-  end,
-
-  rinamo_sup:start_link().
+    case rinamo_config:is_enabled() of
+        true ->
+            start_cowboy(),
+            configure_riak(),
+            rinamo_sup:start_link();
+        _ ->
+            ok
+    end.
 
 stop(_State) ->
-  [webmachine_router:remove_route(R) || R <- routes()].
+    cowboy:stop_listener(rinamo_listener).
 
 %% ===================================================================
 %% Internal functions
 %% ===================================================================
 
-add_routes() ->
-  [webmachine_router:add_route(R) || R <- routes()].
+start_cowboy() ->
+    CowboyStartFun = case rinamo_config:get_protocol() of
+        http -> fun cowboy:start_http/4;
+        https -> fun cowboy:start_https/4
+    end,
 
-props() ->
-  [].
+    {RawIp, Port} = rinamo_config:get_bind_address(),
+    {ok, Ip} = inet_parse:address(RawIp),
+    NumAcceptors = rinamo_config:get_num_acceptors(),
+    Dispatch = cowboy_router:compile(get_routes()),
 
-routes() ->
-  [
-    {[rinamo_config:endpoint_prefix()], rinamo_wm_endpoint, props()},
-    {[rinamo_config:endpoint_prefix(), "ping"], rinamo_wm_ping, props()}
-  ].
+    CowboyStartFun(rinamo_listener, NumAcceptors,
+        [{ip, Ip}, {port, Port}],
+        [
+            {env, [{dispatch, Dispatch}]},
+            {middlewares, [
+                cowboy_router,
+                rinamo_middleware_reqid,
+                rinamo_middleware_auth,
+                rinamo_middleware_metering,
+                cowboy_handler
+            ]}
+        ]
+    ).
+
+get_routes() ->
+    [{'_', [
+        {<<"/ping">>, rinamo_handler_ping, []},
+        {<<"/">>, rinamo_handler_root, []}
+    ]}].
+
+configure_riak() ->
+    riak_core_bucket_type:create(?RINAMO_SET_TYPE, [{datatype, set}]),
+    riak_core_bucket_type:activate(?RINAMO_SET_TYPE).

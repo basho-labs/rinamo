@@ -1,11 +1,12 @@
 {application, rinamo,
  [
-  {description, ""},
-  {vsn, "1"},
+  {description, "A DynamoDB API implementation built on Riak 2.0"},
+  {vsn, "0.0.2"},
   {registered, []},
   {applications, [
     kernel,
-    stdlib ]},
+    stdlib,
+    cowboy ]},
   {mod, { rinamo_app, []}},
   {env, []}
  ]}.

@@ -1,24 +1,40 @@
 -module(rinamo_codec).
 
--export([decode_create_table/1, decode_table_name/1,
-         decode_list_tables/1, decode_put_item/1,
-         decode_item_request/1]).
+-export([
+    decode_create_table/1,
+    decode_table_name/1,
+    decode_list_tables/1,
+    decode_put_item/1,
+    decode_item_request/1,
+    decode_query/1,
+    decode_rinamo_keypath/2]).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
+-include("rinamo.hrl").
+
+decode_rinamo_keypath([], Acc) ->
+    Acc;
+decode_rinamo_keypath(Binary, Acc) when is_binary(Binary) ->
+    List = binary:bin_to_list(Binary),
+    decode_rinamo_keypath(List, Acc);
+decode_rinamo_keypath(List, Acc) when is_list(List) ->
+    case lists:splitwith(fun(X) -> X /= ?RINAMO_SEPARATOR end, List) of
+        {First, [_ | Last]} ->
+            decode_rinamo_keypath(Last, lists:append(Acc, [First]));
+        {Last, []} ->
+            decode_rinamo_keypath([], lists:append(Acc, [Last]))
+    end.
 
 decode_batch_get_item(Json) ->
-  ok.
+    ok.
 
 decode_batch_write_item(Json) ->
-  ok.
+    ok.
 
 decode_list_tables(Json) ->
-  Limit = kvc:path("Limit", Json),
-  ExclusiveStart = kvc:path("ExclusiveStartTableName", Json),
-  [{exclusive_start, ExclusiveStart},
-   {limit, Limit}].
+    Limit = kvc:path("Limit", Json),
+    ExclusiveStart = kvc:path("ExclusiveStartTableName", Json),
+    [{exclusive_start, ExclusiveStart},
+     {limit, Limit}].
 
 decode_item_request(Json) ->
     Attributes = kvc:path("AttributesToGet", Json),
@@ -89,16 +105,16 @@ decode_query(Json) ->
     Select = kvc:path("Select", Json),
     TableName = kvc:path("TableName", Json),
 
-    [{"AttributesToGet", AttributesToGet},
-     {"ConsistentRead", ConsistentRead},
-     {"ExclusiveStartKey", ExclusiveStartKey},
-     {"IndexName", IndexName},
-     {"KeyConditions", KeyConditions},
-     {"Limit", Limit},
-     {"ReturnConsumedCapacity", ReturnConsumedCapacity},
-     {"ScanIndexForward", ScanIndexForward},
-     {"Select", Select},
-     {"TableName", TableName}].
+    [{attributes_to_get, AttributesToGet},
+     {consistent_read, ConsistentRead},
+     {exclusive_start, ExclusiveStartKey},
+     {index_name, IndexName},
+     {key_conditions, KeyConditions},
+     {limit, Limit},
+     {return_consumed_capacity, ReturnConsumedCapacity},
+     {scan_index_forward, ScanIndexForward},
+     {select, Select},
+     {tablename, TableName}].
 
 decode_scan(Json) ->
     ok.
@@ -132,14 +148,14 @@ decode_put_expected([Field|Rest], Acc) ->
         <<"true">> -> true;
         _ -> false
     end,
-    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}|Acc]).
+    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]} | Acc]).
 
 
 decode_table_attributes([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 decode_table_attributes([Attribute|Rest], Acc) ->
-    decode_table_attributes(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
-                                   {<<"AttributeType">>, kvc:path("AttributeType", Attribute)} | Acc]).
+    decode_table_attributes(Rest, [[{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
+                                   {<<"AttributeType">>, kvc:path("AttributeType", Attribute)}] | Acc]).
 
 decode_2i([], Acc) ->
     lists:reverse(Acc);
@@ -156,10 +172,10 @@ decode_2i([Index|Rest], Acc) ->
 
 
 decode_2i_key_schema([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 decode_2i_key_schema([Attribute|Rest], Acc) ->
-    decode_2i_key_schema(Rest, [{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
-                                {<<"KeyType">>, kvc:path("KeyType", Attribute)} | Acc]).
+    decode_2i_key_schema(Rest, [[{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
+                                {<<"KeyType">>, kvc:path("KeyType", Attribute)}] | Acc]).
 
 decode_key_conditions([], Acc) ->
     lists:reverse(Acc);
@@ -178,6 +194,7 @@ decode_attribute_values([Attribute|Rest], Acc) ->
 
 
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 decode_batch_get_item_test() ->
     Actual = decode_batch_get_item([]),
@@ -192,18 +209,18 @@ decode_batch_write_item_test() ->
 decode_item_request_test() ->
     Json_Bin = <<"{
     \"AttributesToGet\": [
-      \"string\"
+        \"string\"
     ],
     \"ConsistentRead\": false,
     \"Key\":
-      {
-          \"key1\" : {\"B\": \"blob\"},
-          \"key2\" : {\"BS\": [\"blob\"]},
-          \"key3\" : {\"N\": \"string\"},
-          \"key4\" : {\"NS\": [\"string\"]},
-          \"key5\" : {\"S\": \"string\"},
-          \"key6\" : {\"SS\": [\"string\"]}
-      },
+        {
+            \"key1\" : {\"B\": \"blob\"},
+            \"key2\" : {\"BS\": [\"blob\"]},
+            \"key3\" : {\"N\": \"string\"},
+            \"key4\" : {\"NS\": [\"string\"]},
+            \"key5\" : {\"S\": \"string\"},
+            \"key6\" : {\"SS\": [\"string\"]}
+        },
     \"ReturnConsumedCapacity\": \"string\",
     \"TableName\": \"string\"
     }">>,
@@ -211,13 +228,13 @@ decode_item_request_test() ->
     io:format("~p", [Actual]),
 
     Expected = [{attributes_to_get,[<<"string">>]},
-                {consistent_read,false},
+                {consistent_read, false},
                 {keys, [{"key1",{<<"B">>,<<"blob">>}},
-                          {"key2",{<<"BS">>,[<<"blob">>]}},
-                          {"key3",{<<"N">>,<<"string">>}},
-                          {"key4",{<<"NS">>,[<<"string">>]}},
-                          {"key5",{<<"S">>,<<"string">>}},
-                          {"key6",{<<"SS">>,[<<"string">>]}}]},
+                        {"key2",{<<"BS">>,[<<"blob">>]}},
+                        {"key3",{<<"N">>,<<"string">>}},
+                        {"key4",{<<"NS">>,[<<"string">>]}},
+                        {"key5",{<<"S">>,<<"string">>}},
+                        {"key6",{<<"SS">>,[<<"string">>]}}]},
                 {return_consumed_capacity,<<"string">>},
                 {tablename,<<"string">>}],
 
@@ -225,49 +242,49 @@ decode_item_request_test() ->
 
 decode_put_item_test() ->
     Json_Bin = <<"{
-      \"Expected\":
+    \"Expected\":
         {
-          \"field1\": {\"Exists\": \"true\", \"Value\": {\"B\": \"blob\"}},
-          \"field2\": {\"Exists\": \"false\", \"Value\": {\"BS\": [ \"blob\" ]}},
-          \"field3\": {\"Exists\": \"true\", \"Value\": {\"N\": \"string\"}},
-          \"field4\": {\"Exists\": \"false\", \"Value\": {\"NS\": [ \"string\" ]}},
-          \"field5\": {\"Exists\": \"true\", \"Value\": {\"S\": \"string\"}},
-          \"field6\": {\"Exists\": \"false\", \"Value\": {\"SS\": [ \"string\" ]}}
+            \"field1\": {\"Exists\": \"true\", \"Value\": {\"B\": \"blob\"}},
+            \"field2\": {\"Exists\": \"false\", \"Value\": {\"BS\": [ \"blob\" ]}},
+            \"field3\": {\"Exists\": \"true\", \"Value\": {\"N\": \"string\"}},
+            \"field4\": {\"Exists\": \"false\", \"Value\": {\"NS\": [ \"string\" ]}},
+            \"field5\": {\"Exists\": \"true\", \"Value\": {\"S\": \"string\"}},
+            \"field6\": {\"Exists\": \"false\", \"Value\": {\"SS\": [ \"string\" ]}}
         },
-      \"Item\":
+    \"Item\":
         {
-          \"field1\": {\"B\": \"blob\"},
-          \"field2\": {\"BS\": [\"blob\"]},
-          \"field3\": {\"N\": \"string\"},
-          \"field4\": {\"NS\": [\"string\"]},
-          \"field5\": {\"S\": \"string\"},
-          \"field6\": {\"SS\": [\"string\"]}
+            \"field1\": {\"B\": \"blob\"},
+            \"field2\": {\"BS\": [\"blob\"]},
+            \"field3\": {\"N\": \"string\"},
+            \"field4\": {\"NS\": [\"string\"]},
+            \"field5\": {\"S\": \"string\"},
+            \"field6\": {\"SS\": [\"string\"]}
         },
-      \"ReturnConsumedCapacity\": \"string\",
-      \"ReturnItemCollectionMetrics\": \"string\",
-      \"ReturnValues\": \"string\",
-        \"TableName\": \"table_name\"
+    \"ReturnConsumedCapacity\": \"string\",
+    \"ReturnItemCollectionMetrics\": \"string\",
+    \"ReturnValues\": \"string\",
+    \"TableName\": \"table_name\"
     }">>,
     Actual = decode_put_item(jsx:decode(Json_Bin)),
     Expected = [
-      {expected, [
-        {<<"field1">>, [{<<"Exists">>, true}, {<<"B">>, <<"blob">>}]},
-        {<<"field2">>, [{<<"Exists">>, false}, {<<"BS">>, [<<"blob">>]}]},
-        {<<"field3">>, [{<<"Exists">>, true}, {<<"N">>, <<"string">>}]},
-        {<<"field4">>, [{<<"Exists">>, false}, {<<"NS">>, [<<"string">>]}]},
-        {<<"field5">>, [{<<"Exists">>, true}, {<<"S">>, <<"string">>}]},
-        {<<"field6">>, [{<<"Exists">>, false}, {<<"SS">>, [<<"string">>]}]}
-      ]},
-      {item,[{<<"field1">>,[{<<"B">>,<<"blob">>}]},
-        {<<"field2">>,[{<<"BS">>,[<<"blob">>]}]},
-        {<<"field3">>,[{<<"N">>,<<"string">>}]},
-        {<<"field4">>,[{<<"NS">>,[<<"string">>]}]},
-        {<<"field5">>,[{<<"S">>,<<"string">>}]},
-        {<<"field6">>,[{<<"SS">>,[<<"string">>]}]}]},
-      {return_consumed_capacity, <<"string">>},
-      {return_item_collection_metrics, <<"string">>},
-      {return_values, <<"string">>},
-      {tablename, <<"table_name">>}],
+        {expected, [
+            {<<"field1">>, [{<<"Exists">>, true}, {<<"B">>, <<"blob">>}]},
+            {<<"field2">>, [{<<"Exists">>, false}, {<<"BS">>, [<<"blob">>]}]},
+            {<<"field3">>, [{<<"Exists">>, true}, {<<"N">>, <<"string">>}]},
+            {<<"field4">>, [{<<"Exists">>, false}, {<<"NS">>, [<<"string">>]}]},
+            {<<"field5">>, [{<<"Exists">>, true}, {<<"S">>, <<"string">>}]},
+            {<<"field6">>, [{<<"Exists">>, false}, {<<"SS">>, [<<"string">>]}]}
+        ]},
+        {item,[{<<"field1">>,[{<<"B">>,<<"blob">>}]},
+            {<<"field2">>,[{<<"BS">>,[<<"blob">>]}]},
+            {<<"field3">>,[{<<"N">>,<<"string">>}]},
+            {<<"field4">>,[{<<"NS">>,[<<"string">>]}]},
+            {<<"field5">>,[{<<"S">>,<<"string">>}]},
+            {<<"field6">>,[{<<"SS">>,[<<"string">>]}]}]},
+        {return_consumed_capacity, <<"string">>},
+        {return_item_collection_metrics, <<"string">>},
+        {return_values, <<"string">>},
+        {tablename, <<"table_name">>}],
     io:format("Actual: ~p~n", [Actual]),
     ?assertEqual(Expected, Actual).
 
@@ -290,19 +307,27 @@ decode_table_name_test() ->
 
 decode_create_table_test() ->
     Json_Bin = <<"{
-      \"AttributeDefinitions\": [
+    \"AttributeDefinitions\": [
         {
-            \"AttributeName\": \"attr_name\",
-            \"AttributeType\": \"attr_type\"
-        }
-      ],
-      \"KeySchema\": [
+            \"AttributeName\": \"Id\",
+            \"AttributeType\": \"N\"
+        },
         {
-            \"AttributeName\": \"attr_name\",
-            \"KeyType\": \"key_type\"
+            \"AttributeName\": \"Date\",
+            \"AttributeType\": \"S\"
         }
-      ],
-      \"LocalSecondaryIndexes\": [
+    ],
+    \"KeySchema\": [
+        {
+            \"AttributeName\": \"Id\",
+            \"KeyType\": \"HASH\"
+        },
+        {
+            \"AttributeName\": \"Date\",
+            \"KeyType\": \"RANGE\"
+        }
+    ],
+    \"LocalSecondaryIndexes\": [
         {
             \"IndexName\": \"2i_name\",
             \"KeySchema\": [
@@ -318,25 +343,27 @@ decode_create_table_test() ->
                 \"ProjectionType\": \"projection_type\"
             }
         }
-      ],
-      \"ProvisionedThroughput\": {
+    ],
+    \"ProvisionedThroughput\": {
         \"ReadCapacityUnits\": 20,
         \"WriteCapacityUnits\": 5
-      },
-      \"TableName\": \"table_name\"
+    },
+    \"TableName\": \"table_name\"
     }">>,
     Actual = decode_create_table(jsx:decode(Json_Bin)),
     io:format("Actual: ~p~n", [Actual]),
     Expected = [{tablename, <<"table_name">>},
-                {fields, [
-                  {<<"AttributeName">>, <<"attr_name">>}, {<<"AttributeType">>, <<"attr_type">>}
+                {fields,[
+                    [{<<"AttributeName">>, <<"Id">>}, {<<"AttributeType">>, <<"N">>}],
+                    [{<<"AttributeName">>, <<"Date">>}, {<<"AttributeType">>, <<"S">>}]
                 ]},
                 {key_schema, [
-                  {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
+                    [{<<"AttributeName">>, <<"Id">>}, {<<"KeyType">>, <<"HASH">>}],
+                    [{<<"AttributeName">>, <<"Date">>}, {<<"KeyType">>, <<"RANGE">>}]
                 ]},
                 {lsi, [[{<<"2i_name">>,
                         [{key_schema, [
-                          {<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}
+                            [{<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}]
                         ]},
                         {projection, [{non_key_attributes, [<<"attr_name">>]},
                                       {projection_type, <<"projection_type">>}]}]
@@ -355,72 +382,72 @@ decode_update_table_test() ->
 
 decode_query_test() ->
     Json_Bin = <<"{
-      \"AttributesToGet\": [
-          \"string\"
-      ],
-      \"ConsistentRead\": false,
-      \"ExclusiveStartKey\":
+    \"AttributesToGet\": [
+        \"string\"
+    ],
+    \"ConsistentRead\": false,
+    \"ExclusiveStartKey\":
         {
-          \"Key1\": {\"B\": \"blob\"},
-          \"Key2\": {\"BS\": [\"blob\"]},
-          \"Key3\": {\"N\": \"string\"},
-          \"Key4\": {\"NS\": [\"string\"]},
-          \"Key5\": {\"S\": \"string\"},
-          \"Key6\": {\"SS\": [\"string\"]}
+            \"Key1\": {\"B\": \"blob\"},
+            \"Key2\": {\"BS\": [\"blob\"]},
+            \"Key3\": {\"N\": \"string\"},
+            \"Key4\": {\"NS\": [\"string\"]},
+            \"Key5\": {\"S\": \"string\"},
+            \"Key6\": {\"SS\": [\"string\"]}
         },
-      \"IndexName\": \"string\",
-      \"KeyConditions\":
+    \"IndexName\": \"string\",
+    \"KeyConditions\":
         {
-          \"Key1\": {
+        \"Key1\": {
             \"AttributeValueList\": [{\"B\": \"blob\"}],
             \"ComparisonOperator\": \"string\"},
-          \"Key2\": {
+        \"Key2\": {
             \"AttributeValueList\": [{\"BS\": [\"blob\"]}],
             \"ComparisonOperator\": \"string\"},
-          \"Key3\": {
+        \"Key3\": {
             \"AttributeValueList\": [{\"N\": \"string\"}],
             \"ComparisonOperator\": \"string\"},
-          \"Key4\": {
+        \"Key4\": {
             \"AttributeValueList\": [{\"NS\": [\"string\"]}],
             \"ComparisonOperator\": \"string\"},
-          \"Key5\": {
+        \"Key5\": {
             \"AttributeValueList\": [{\"S\": \"string\"}],
             \"ComparisonOperator\": \"string\"},
-          \"Key6\": {
+        \"Key6\": {
             \"AttributeValueList\": [{\"SS\": [\"string\"]}],
             \"ComparisonOperator\": \"string\"}
         },
-      \"Limit\": \"number\",
-      \"ReturnConsumedCapacity\": \"string\",
-      \"ScanIndexForward\": \"boolean\",
-      \"Select\": \"string\",
-      \"TableName\": \"string\"
-      }">>,
+    \"Limit\": \"number\",
+    \"ReturnConsumedCapacity\": \"string\",
+    \"ScanIndexForward\": false,
+    \"Select\": \"string\",
+    \"TableName\": \"string\"
+    }">>,
     Actual = decode_query(jsx:decode(Json_Bin)),
-    Expected = [{"AttributesToGet", [<<"string">>]},
-                {"ConsistentRead", false},
-                {"ExclusiveStartKey", [
-                  {<<"Key1">>, [{<<"B">>, <<"blob">>}]},
-                  {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}]},
-                  {<<"Key3">>, [{<<"N">>, <<"string">>}]},
-                  {<<"Key4">>, [{<<"NS">>, [<<"string">>]}]},
-                  {<<"Key5">>, [{<<"S">>, <<"string">>}]},
-                  {<<"Key6">>, [{<<"SS">>, [<<"string">>]}]}
+    Expected = [{attributes_to_get, [<<"string">>]},
+                {consistent_read, false},
+                {exclusive_start, [
+                    {<<"Key1">>, [{<<"B">>, <<"blob">>}]},
+                    {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}]},
+                    {<<"Key3">>, [{<<"N">>, <<"string">>}]},
+                    {<<"Key4">>, [{<<"NS">>, [<<"string">>]}]},
+                    {<<"Key5">>, [{<<"S">>, <<"string">>}]},
+                    {<<"Key6">>, [{<<"SS">>, [<<"string">>]}]}
                 ]},
-                {"IndexName", <<"string">>},
-                {"KeyConditions", [
+                {index_name, <<"string">>},
+                {key_conditions, [
                     {<<"Key1">>, [{<<"B">>, <<"blob">>}], <<"string">>},
                     {<<"Key2">>, [{<<"BS">>, [<<"blob">>]}], <<"string">>},
                     {<<"Key3">>, [{<<"N">>, <<"string">>}], <<"string">>},
                     {<<"Key4">>, [{<<"NS">>, [<<"string">>]}], <<"string">>},
                     {<<"Key5">>, [{<<"S">>, <<"string">>}], <<"string">>},
                     {<<"Key6">>, [{<<"SS">>, [<<"string">>]}], <<"string">>}
-                     ]},
-                {"Limit", <<"number">>},
-                {"ReturnConsumedCapacity", <<"string">>},
-                {"ScanIndexForward", <<"boolean">>},
-                {"Select", <<"string">>},
-                {"TableName", <<"string">>}],
+                ]},
+                {limit, <<"number">>},
+                {return_consumed_capacity, <<"string">>},
+                {scan_index_forward, false},
+                {select, <<"string">>},
+                {tablename, <<"string">>}],
     io:format("Actual: ~p", [Actual]),
     ?assertEqual(Expected, Actual).
 

@@ -16,8 +16,37 @@
           end
   end}.
 
-%% @doc endpoint_prefix is the first part of all URLS used by Rinamo HTTP endpoints.
-%% @datatype string
-{mapping, "rinamo.endpoint_prefix", "rinamo.endpoint_prefix", [
-  {default, "rinamo"}
+%% Rinamo API listener protocol
+%% @doc rinamo.protocol tells Rinamo whether to use HTTP or HTTPS when listening for connections.
+%% @datatype enum http, https
+{mapping, "rinamo.network.protocol", "rinamo.network.protocol", [
+  {default, http},
+  {datatype, {enum, [http, https]}}
+]}.
+
+%% Rinamo API listener bind IP and Port
+%% @doc rinamo.bind tells Rinamo which IP and port to bind to.
+%% @datatype ip
+{mapping, "rinamo.network.bind", "rinamo.network.bind", [
+  {default, {"127.0.0.1",8000}},
+  {datatype, ip}
+]}.
+
+%% Rinamo API number of listener acceptors
+%% @doc rinamo.protocol tells Rinamo how many Cowboy acceptors to use.
+%% @datatype integer
+{mapping, "rinamo.network.acceptors", "rinamo.network.acceptors", [
+  {default, 100},
+  {datatype, integer},
+  {validators, ["greater_than_zero"]}
+]}.
+
+%% Rinamo Indexing Strategy
+%% @doc rinamo.index tells Rinamo which indexing stragegy to use.
+%% @datatype enum rinamo_idx_one_for_one, rinamo_idx_item_proxies
+{mapping, "rinamo.index.strategy", "rinamo.index.strategy", [
+  {default, rinamo_idx_one_for_one},
+  {datatype, {enum, [
+    rinamo_idx_one_for_one,
+    rinamo_idx_item_proxies]}}
 ]}.
