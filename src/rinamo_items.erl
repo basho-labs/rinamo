@@ -251,5 +251,40 @@ map_key_condition_test() ->
 
     meck:unload([rinamo_tables, rinamo_kv]).
 
+query_test() ->
+    meck:new([rinamo_config, rinamo_tables, rinamo_kv, rinamo_set], [non_strict]),
+    meck:expect(rinamo_kv, client, 0, ok),
+    meck:expect(rinamo_set, client, 0, ok),
+    meck:expect(rinamo_config, get_index_strategy, 0, rinamo_idx_one_for_one),
+    meck:expect(rinamo_set, value, 3, {value, [<<"Book 102 Title">>]}),
+    meck:expect(rinamo_kv, get, 3, {value, item_fixture()}),
+    meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(range_table_fixture())),
+
+    Table = <<"TableName">>,
+    KeyConditions = [
+        {<<"Title">>,[{<<"S">>,<<"Book 102">>}],<<"BEGINS_WITH">>},
+        {<<"ISBN">>, [{<<"N">>,<<"9876">>}],<<"GT">>},
+        {<<"Id">>,[{<<"N">>,<<"101">>}],<<"EQ">>},
+        {<<"AnotherCondition">>, [{<<"S">>,<<"XYZ">>}],<<"LT">>}],
+    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+
+    Actual = query(Table, KeyConditions, AWSContext),
+
+    Expected = [[{
+        <<"Item">>, [
+            {<<"Title">>,[{<<"S">>,<<"Book 102 Title">>}]},
+            {<<"PageCount">>,[{<<"N">>,<<"600">>}]},
+            {<<"InPublication">>,[{<<"N">>,<<"1">>}]},
+            {<<"ISBN">>,[{<<"S">>,<<"222-2222222222">>}]},
+            {<<"Dimensions">>,[{<<"S">>,<<"8.5 x 11.0 x 0.8">>}]},
+            {<<"Price">>,[{<<"N">>,<<"20">>}]},
+            {<<"ProductCategory">>,[{<<"S">>,<<"Book">>}]},
+            {<<"Id">>,[{<<"N">>,<<"102">>}]},
+            {<<"Authors">>,[{<<"SS">>,[<<"Author1">>,<<"Author2">>]}]}
+        ]}, {<<"TableName">>,<<"ProductCatalog">>}]],
+
+    ?assertEqual(Expected, Actual),
+
+    meck:unload([rinamo_config, rinamo_tables, rinamo_kv, rinamo_set]).
 
 -endif.
