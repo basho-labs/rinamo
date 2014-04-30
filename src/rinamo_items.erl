@@ -263,8 +263,8 @@ query_test() ->
     Table = <<"TableName">>,
     KeyConditions = [
         {<<"Title">>,[{<<"S">>,<<"Book 102">>}],<<"BEGINS_WITH">>},
-        {<<"ISBN">>, [{<<"N">>,<<"9876">>}],<<"GT">>},
-        {<<"Id">>,[{<<"N">>,<<"101">>}],<<"EQ">>},
+        {<<"ISBN">>, [{<<"N">>,<<"222-2222222222">>}],<<"EQ">>},
+        {<<"Id">>,[{<<"N">>,<<"102">>}],<<"EQ">>},
         {<<"AnotherCondition">>, [{<<"S">>,<<"XYZ">>}],<<"LT">>}],
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
