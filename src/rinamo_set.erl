@@ -37,7 +37,6 @@ read_and_modify(Client, Bucket, Key, Object, Op) ->
     CrdtOp = #crdt_op{mod=riak_dt_orswot, op={Op, Object}, ctx=Ctx},
     modify(Client, RO, CrdtOp).
 
-%% todo:  get rid of this fun
 get(Client, Bucket, Key) ->
     Client:get({?RINAMO_SET_TYPE, Bucket}, Key, []).
 

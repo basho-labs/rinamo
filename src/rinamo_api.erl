@@ -131,11 +131,7 @@ delete_item(DynamoRequest, AWSContext) ->
     [{attributes_to_get, _}, {consistent_read, _},
      {_, Keys}, {return_consumed_capacity, _},
      {_, TableName}] = rinamo_codec:decode_item_request(DynamoRequest),
-
-    [{_, {_, Key}}] = Keys,
-
-    rinamo_items:delete_item(TableName, Key, AWSContext),
-
+    rinamo_items:delete_item(TableName, Keys, AWSContext),
     [{}].
 
 % ---- Query ---- %
@@ -146,13 +142,11 @@ query(DynamoRequest, AWSContext) ->
     {return_consumed_capacity, _}, {scan_index_forward, _}, {select, _},
     {tablename, TableName}] = rinamo_codec:decode_query(DynamoRequest),
 
-    % Key Details
-    [{HashKeyAttr,[{HashKeyType, HashKeyValue}], HashKeyOperator},
-    {RangeKeyAttr,[{RangeKeyType, RangeKeyValue}], RangeKeyOperator}] = KeyConditions,
     lager:debug("Query Decode: ~p~n", [KeyConditions]),
-    lager:debug("Hash Key Details: ~p,~p,~p,~p~n", [HashKeyAttr, HashKeyType, HashKeyValue, HashKeyOperator]),
-    lager:debug("Range Key Details: ~p,~p,~p,~p~n", [RangeKeyAttr, RangeKeyType, RangeKeyValue, RangeKeyOperator]),
-    [{}].
+
+    Result = rinamo_items:query(TableName, KeyConditions, AWSContext),
+    lager:debug("Query Result: ~p~n", [Result]),
+    [{<<"Items">>, Result}, {<<"Count">>, length(Result)}].
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").

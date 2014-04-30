@@ -99,6 +99,15 @@ make(table_missing) ->
         <<"ResourceNotFoundException">>,
         <<"Cannot do operations on a non-existent table.">>);
 
+make(validation_hash_condition) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"All queries must have a condition on the hash key, and it must be of type EQ.">>);
+
+make(validation_range_condition) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"Range Condition does not match range key">>);
 
 % Basho Specific Errors
 
