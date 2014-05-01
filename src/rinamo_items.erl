@@ -244,10 +244,10 @@ map_key_condition_test() ->
 
 query_test() ->
     meck:new([rinamo_config, rinamo_tables, rinamo_kv, rinamo_set], [non_strict]),
-    meck:expect(rinamo_kv, client, 0, ok),
-    meck:expect(rinamo_set, client, 0, ok),
     meck:expect(rinamo_config, get_index_strategy, 0, rinamo_idx_one_for_one),
+    meck:expect(rinamo_set, client, 0, ok),
     meck:expect(rinamo_set, value, 3, {value, [<<"Book 102 Title">>]}),
+    meck:expect(rinamo_kv, client, 0, ok),
     meck:expect(rinamo_kv, get, 3, {value,
         jsx:encode([
          {<<"Id">>,[{<<"N">>,<<"102">>}]},
