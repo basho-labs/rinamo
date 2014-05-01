@@ -52,15 +52,6 @@ delete_item(Table, Key, AWSContext) ->
 query(Table, KeyConditions, AWSContext) ->
     UserKey = AWSContext#state.user_key,
 
-    % TODO: more validation
-    %  - Value must not be empty string
-    %  - HashKeyOperator should always be "EQ".
-    %  - Should be at least one key condition matching key schema.
-    %    - detected within map key conditions
-    %  - Error if range condition not specified for table using range key
-    %    - if specified, condition type should match schema type
-    %    - if not a range table, ok - but have to handle that case specifically
-
     [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
      {range, {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator}},
      {remaining, PostFilterConditions}] = map_key_conditions(Table, KeyConditions, AWSContext),
