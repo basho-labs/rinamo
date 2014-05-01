@@ -116,6 +116,7 @@ object Table {
       case Some(range_key) => {
         val (range_condition) = between_value match {
             case Some(between_value) => {
+              // between adds an additional operand to use in the range comparison
               val attr_val_list = List(
                   new AttributeValue().withS(range_value.get),
                   new AttributeValue().withS(between_value))
@@ -130,6 +131,11 @@ object Table {
             }
         }
         key_conditions += ((range_key, range_condition))
+        /*
+        key_conditions += (("ISBN", new Condition()
+            .withComparisonOperator("EQ")
+            .withAttributeValueList(new AttributeValue().withS("ABC"))))
+        */
       }
       case None => {}
     }
