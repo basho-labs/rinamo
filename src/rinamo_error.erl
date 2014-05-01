@@ -109,6 +109,11 @@ make(validation_range_condition) ->
         <<"ValidationException">>,
         <<"Range Condition does not match range key">>);
 
+make(validation_comparison_type) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"Comparison type not valid for query">>);
+
 % Basho Specific Errors
 
 make(missing_operation_target) ->
@@ -124,7 +129,12 @@ make(operation_not_implemented) ->
 make(insufficient_vnodes_available) ->
     build_error(500,
         <<"InternalServerErrorException">>,
-        <<"Insufficient VNodes Available.">>).
+        <<"Insufficient VNodes Available.">>);
+
+make(validation_operand_count) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"Invalid Operand Count">>).
 
 format(Error) ->
     [{<<"__type">>, Error#error.code},

@@ -27,7 +27,6 @@ store(PartitionNS, PartitionId, Value, Item) ->
 
 query(PartitionNS, PartitionId, Query, Conditions) ->
     {Attribute, Operands, Operator} = Query,
-    % lookup the orswot
     RB = erlang:iolist_to_binary([<<"Rinamo">>, ?RINAMO_SEPARATOR, <<"Index">>]),
     RK = erlang:iolist_to_binary([
         PartitionNS, ?RINAMO_SEPARATOR,
@@ -36,14 +35,13 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
     {value, RefList} = rinamo_set:value(rinamo_set:client(), RB, RK),
 
     lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
+    lager:debug("Conditions: ~p~n", [Conditions]),
 
     PreFilteredList = pre_filter(Operands, Operator, RefList),
 
-    ItemList = fetch_items(PartitionNS, PartitionId, PreFilteredList, []),
+    ItemAttrList = fetch_items(PartitionNS, PartitionId, PreFilteredList, []),
 
-    % TODO: apply post filter conditions
-
-    ItemList.
+    post_filter(ItemAttrList, Conditions).
 
 delete(I, Do, Not, Know, Yet) ->
     ok.
@@ -56,47 +54,43 @@ pre_filter(Operands, Operator, List) ->
         [{BOpType, BOpVal}, {EOpType, EOpVal}] ->
             pre_filter(BOpType, BOpVal, EOpType, EOpVal, Operator, List);
         _ ->
-            % TODO: error?
-            ok
+            throw(validation_operand_count)
     end.
 
 pre_filter(_, OpVal, Operator, List) ->
-    case Operator of
-        <<"EQ">> ->
-            lists:filter(fun(X) -> X =:= OpVal end, List);
-        <<"LE">> ->
-            lists:filter(fun(X) -> X =< OpVal end, List);
-        <<"LT">> ->
-            lists:filter(fun(X) -> X < OpVal end, List);
-        <<"GE">> ->
-            lists:filter(fun(X) -> X >= OpVal end, List);
-        <<"GT">> ->
-            lists:filter(fun(X) -> X > OpVal end, List);
-        <<"BEGINS_WITH">> ->
-            Len = size(OpVal),
-            lists:filter(
-                fun(X) ->
-                    case size(X) >= Len of
-                        true ->
-                            <<Prefix:Len/binary, _/binary>> = X,
-                            Prefix =:= OpVal;
-                        false ->
-                            false
-                    end
-                end, List);
-        _ ->
-            % TODO: error?
-            ok
-    end.
+    lists:filter(fun(X) -> eval(X, OpVal, Operator) end, List).
 
 pre_filter(_, BeginVal, _, EndVal, Operator, List) ->
-    case Operator of
-        <<"BETWEEN">> ->
-            lists:filter(fun(X) -> (X >= BeginVal) and (X =< EndVal) end, List);
-        _ ->
-            % TODO: error?
-            ok
-    end.
+    lists:filter(fun(X) -> eval(X, BeginVal, EndVal, Operator) end, List).
+
+post_filter(ItemAttrList, Conditions) ->
+    lists:foldl(
+        fun(Condition, ItemAttrList) ->
+            case Condition of
+            {C_Attr, [{C_OpType, C_OpVal}], C_Op} ->
+                lists:filter(fun(ItemAttrs) ->
+                    case kvc:path(C_Attr, ItemAttrs) of
+                        [{Attr_Type, Attr_Val}] ->
+                            (Attr_Type =:= C_OpType) and eval(Attr_Val, C_OpVal, C_Op);
+                        [] -> false;
+                        _ -> false
+                    end
+                end, ItemAttrList);
+            {C_Attr, [{BOpType, BOpVal}, {EOpType, EOpVal}], C_Op} ->
+                lists:filter(fun(ItemAttrs) ->
+                    case kvc:path(C_Attr, ItemAttrs) of
+                        [{Attr_Type, Attr_Val}] ->
+                            (Attr_Type =:= BOpType) and
+                            (Attr_Type =:= EOpType) and
+                            eval(Attr_Val, BOpVal, EOpVal, C_Op);
+                        [] -> false;
+                        _ -> false
+                    end
+                end, ItemAttrList);
+            _ ->
+                throw(validation_operand_count)
+            end
+        end, ItemAttrList, Conditions).
 
 % TODO:  limit fetch to 1 MB; return LastEvaluatedKey
 fetch_items(_, _, [], Acc) ->
@@ -114,4 +108,36 @@ fetch_items(B, PartitionId, [Ref|Rest], Acc) ->
         _ ->
             % what else can go wrong?
             fetch_items(B, PartitionId, Rest, Acc)
+    end.
+
+eval(X, Y, Operator) ->
+    case Operator of
+        <<"EQ">> ->
+            X =:= Y;
+        <<"LE">> ->
+            X =< Y;
+        <<"LT">> ->
+            X < Y;
+        <<"GE">> ->
+            X >= Y;
+        <<"GT">> ->
+            X > Y;
+        <<"BEGINS_WITH">> ->
+            Len = size(Y),
+            case size(X) >= Len of
+                true ->
+                    <<Prefix:Len/binary, _/binary>> = X,
+                    eval(Prefix, Y, <<"EQ">>);
+                false -> false
+            end;
+        _ ->
+            throw(validation_comparison_type)
+    end.
+
+eval(X, Y1, Y2, Operator) ->
+    case Operator of
+        <<"BETWEEN">> ->
+            (X >= Y1) and (X =< Y2);
+        _ ->
+            throw(validation_comparison_type)
     end.
