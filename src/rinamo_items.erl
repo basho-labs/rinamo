@@ -104,7 +104,7 @@ store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, 
         erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table, ?RINAMO_SEPARATOR, RangeKeyAttribute]),
         HashKeyValue,
         RangeKeyValue,
-        jsx:encode(Item)
+        Item
     ],
     Result = erlang:apply(M, F, A),
 
