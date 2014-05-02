@@ -20,7 +20,7 @@ store(PartitionNS, PartitionId, Value, Item) ->
     % logic for a get has to consider this may not succeed
     B = PartitionNS,
     K = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Value]),
-    V = Item,
+    V = jsx:encode(Item),
     _ = rinamo_kv:put(rinamo_kv:client(), B, K, V, "application/json"),
 
     ok.
