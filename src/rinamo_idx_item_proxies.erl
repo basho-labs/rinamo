@@ -54,8 +54,6 @@ fetch_items([SegmentId|Rest], Partition, Acc) ->
         SegmentId]),
     {value, Segment} = rinamo_set:value(rinamo_set:client(), SB, SK),
 
-    file:write_file("/tmp/segment", io_lib:fwrite("~p~n", [Segment])),
-
     Converted = lists:foldl(fun(S_Item, S_Acc) ->
         {RangeKey, ItemAttrList} = S_Item,
         % May as well check the range key & item attr list while here
