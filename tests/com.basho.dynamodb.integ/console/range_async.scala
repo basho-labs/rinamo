@@ -4,6 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.amazonaws.services.dynamodbv2.model._
 
+// TODO:  add await for result to converge
 Table.create("books_range", "Id", "N", Some("Title"), Some("S"))
 
 // Index Shape Controls
@@ -32,4 +33,5 @@ val results: Seq[Array[PutItemResult]] =
 
 val result:QueryResult = Table.query("books_range", "Id", "1", Some("Title"), Some("BEGINS_WITH"), Some("Title 1"))
 
+// TODO:  add await for result to converge
 assert(per_item == result.getCount())
