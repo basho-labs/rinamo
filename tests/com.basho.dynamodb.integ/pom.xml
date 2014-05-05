@@ -112,7 +112,7 @@
         <version>3.1.6</version>
         <configuration>
           <scalaVersion>${scala.version}</scalaVersion>
-          <mainConsole>RinamoConsole</mainConsole>
+          <mainConsole>bootstrap.rinamo.RinamoConsole</mainConsole>
         </configuration>
         <executions>
           <execution>
@@ -156,6 +156,30 @@
             <org.slf4j.simpleLogger.dateTimeFormat>yyyy-MM-dd HH:mm:ss</org.slf4j.simpleLogger.dateTimeFormat>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+      <!-- Run Scala Test from CLI -->
+      <plugin>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest-maven-plugin</artifactId>
+        <version>1.0-RC2</version>
+        <configuration>
+          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+          <junitxml>.</junitxml>
+          <filereports>Rinamo_Acceptance_Test_Suite.txt</filereports>
+          <jvmArgs>
+            <jvmArg>-client</jvmArg>
+            <jvmArg>-Xms64m</jvmArg>
+            <jvmArg>-Xmx128m</jvmArg>
+          </jvmArgs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>test</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -216,6 +240,37 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk</artifactId>
       <version>${aws.sdk.version}</version>
+    </dependency>
+
+    <!-- Scala Test -->
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.10</artifactId>
+      <version>2.0.1-SNAP4</version>
+      <scope>test</scope>
+      <!-- scalatest polutes the classpath some -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-reflect</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-reflect</artifactId>
+      <version>${scala.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scalacheck</groupId>
+      <artifactId>scalacheck_2.10</artifactId>
+      <version>1.11.1</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
