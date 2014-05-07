@@ -1,2 +1,1 @@
-class Item extends acceptance.Item {
-}
+class Item extends acceptance.Item

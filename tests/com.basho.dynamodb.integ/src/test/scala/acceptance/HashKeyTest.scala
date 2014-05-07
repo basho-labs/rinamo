@@ -9,6 +9,7 @@ import org.mockito.Matchers._
 
 import java.util.concurrent.TimeUnit._
 
+import com.amazonaws._
 import com.amazonaws.services.dynamodbv2.model._
 import com.jayway.awaitility.scala._
 import com.jayway.awaitility.Awaitility._
@@ -22,8 +23,10 @@ class HashKeyTest extends FunSpec
 
   override def beforeEach() {
     table = Table.create(table_name, "Id", "N")
-    await atMost(500, MILLISECONDS) until {
+    await atMost(2, MINUTES) until {
       val result = Table.describe(table_name)
+      // TODO:  and these together, once rinamo goes async
+      "ACTIVE".equals(result.getTable().getTableStatus())
       table_name.equals(result.getTable().getTableName())
     }
   }
@@ -34,7 +37,7 @@ class HashKeyTest extends FunSpec
     catch {
       case e: ResourceNotFoundException => {}
     }
-    await atMost(500, MILLISECONDS) until {
+    await atMost(2, MINUTES) until {
       var exception:Throwable = null
       try {
         Table.describe(table_name)
@@ -95,12 +98,38 @@ class HashKeyTest extends FunSpec
       item.add("Id", "N", "101")
       item.add("Title", "S", "Some Title")
 
-      it ("should put item in table") (pending)
+      it ("should put item in table") {
+        val result = Table.put(table_name, item)
+        assert("{}".equals(result.toString()))
+      }
+
+      it ("should fail put if expectation fails") {
+        evaluating {
+          val invalid_expect = new ExpectedAttributeValue(
+              new AttributeValue("Bar")).withExists(true)
+          var expected:Map[String, ExpectedAttributeValue] = Map()
+          expected += (("Foo", invalid_expect))
+          Table.put(table_name, item, Some(expected), None)
+        } should produce [ConditionalCheckFailedException]
+      }
 
       it ("should fail put if using non existing table") {
         evaluating {
           Table.put("nonexistant_table", item)
         } should produce [ResourceNotFoundException]
+      }
+
+      // ALL_OLD appears to behave like NONE, but different from these
+      it ("should fail put if using invalid return values") {
+        evaluating {
+          Table.put(table_name, item, None, Some(ReturnValue.ALL_NEW))
+        } should produce [AmazonServiceException]
+        evaluating {
+          Table.put(table_name, item, None, Some(ReturnValue.UPDATED_OLD))
+        } should produce [AmazonServiceException]
+        evaluating {
+          Table.put(table_name, item, None, Some(ReturnValue.UPDATED_NEW))
+        } should produce [AmazonServiceException]
       }
     }
     describe ("US193709: read data, get item") {

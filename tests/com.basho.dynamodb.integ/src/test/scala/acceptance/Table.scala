@@ -58,9 +58,19 @@ object Table {
     return client.deleteTable(table_name)
   }
 
-  def put(table_name:String, item:Item): PutItemResult = {
+  def put(table_name:String, item:Item,
+          _expected:Option[Map[String, ExpectedAttributeValue]] = None,
+          _returnValue:Option[ReturnValue] = Some(ReturnValue.NONE)): PutItemResult = {
     val request = new PutItemRequest().withItem(item.asMap())
     request.setTableName(table_name)
+    _returnValue match {
+      case Some(_returnValue) => { request.setReturnValues(_returnValue) }
+      case None => { request.setReturnValues(ReturnValue.NONE) }
+    }
+    _expected match {
+      case Some(_expected) => { request.setExpected(_expected) }
+      case None => {}
+    }
     return client.putItem(request)
   }
 
@@ -74,12 +84,6 @@ object Table {
     return client.getItem(request)
   }
 
-  /* Delete a Table's Item */
-  /* If table uses range keys, and range condition is not passed server
-   * will return:
-   *   - ValidationException
-   *   - The number of conditions on the keys is invalid
-   */
   def delete(table_name:String,
              _hash_key:String, _hash_type:String, _hash_value:String,
              _range_key:Option[String] = None,
