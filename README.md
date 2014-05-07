@@ -22,7 +22,7 @@ below.
 ### Install Vagrant
 
 Download and install Vagrant via the
-[Vagrant installer](https://www.vagrantup.com/downloads/html).
+[Vagrant installer](https://www.vagrantup.com/downloads.html).
 
 ### Install Vagrant plugins
 
