@@ -20,6 +20,7 @@ class HashKeyTest extends FunSpec
 
   val table_name = "test_table_hash"
   var table:CreateTableResult = null
+  var item:Item = null
 
   override def beforeEach() {
     table = Table.create(table_name, "Id", "N")
@@ -29,6 +30,10 @@ class HashKeyTest extends FunSpec
       "ACTIVE".equals(result.getTable().getTableStatus())
       table_name.equals(result.getTable().getTableName())
     }
+    item = new Item()
+    item.add("Id", "N", "101")
+    item.add("Title", "S", "Some Title")
+    Table.put(table_name, item)
   }
   override def afterEach() {
     try {
@@ -94,10 +99,6 @@ class HashKeyTest extends FunSpec
       }
     }
     describe ("US193713: modify data, put item") {
-      val item = new Item()
-      item.add("Id", "N", "101")
-      item.add("Title", "S", "Some Title")
-
       it ("should put item in table") {
         val result = Table.put(table_name, item)
         assert("{}".equals(result.toString()))
@@ -133,7 +134,11 @@ class HashKeyTest extends FunSpec
       }
     }
     describe ("US193709: read data, get item") {
-      it ("should read item from table") (pending)
+      it ("should read item from table") {
+        val result = Table.get(table_name, "Id", "N", "101")
+        val title_value = result.getItem().get("Title")
+        assert("Some Title".equals(title_value.getS()))
+      }
     }
     describe ("US193711: read data, query item") {
       it ("should query items from table") (pending)
@@ -142,7 +147,13 @@ class HashKeyTest extends FunSpec
       it ("should scan item in table") (pending)
     }
     describe ("US193715: modify data, delete item") {
-      it ("should delete item from table") (pending)
+      it ("should delete item from table") {
+        val delete_result = Table.delete(table_name, "Id", "N", "101")
+        await atMost(5, SECONDS) until {
+          val get_result = Table.get(table_name, "Id", "N", "101")
+          get_result.getItem() == null
+        }
+      }
     }
   }
 }
