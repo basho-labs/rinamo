@@ -96,16 +96,23 @@ delete_table(DynamoRequest, AWSContext) ->
 % ---- Put Item ---- %
 
 put_item(DynamoRequest, AWSContext) ->
-    [ {expected, _}, {_, Item}, {return_consumed_capacity, _},
-      {return_item_collection_metrics, _}, {return_values, _},
+    [ {expected, Expectations}, {_, Item}, {return_consumed_capacity, _},
+      {return_item_collection_metrics, _}, {return_values, ReturnValues},
       {_, TableName}] = rinamo_codec:decode_put_item(DynamoRequest),
 
     case TableName of
         [] -> table_missing;
         _ ->
-            % TODO: We can make this async later, result can be dropped.
-            _ = rinamo_items:put_item(TableName, Item, AWSContext),
-            [{}]
+            case ReturnValues of
+                <<"ALL_NEW">> -> return_values_invalid;
+                <<"UPDATED_NEW">> -> return_values_invalid;
+                <<"UPDATED_OLD">> -> return_values_invalid;
+                _ ->
+                    % ALL_OLD appears to behave like NONE
+                    % TODO: make this async, it looks like results can be dropped
+                    _ = rinamo_items:put_item(TableName, Item, Expectations, AWSContext),
+                    [{}]
+            end
     end.
 
 % ---- Get Item ---- %
@@ -246,7 +253,7 @@ put_item_test() ->
     TableDef = jsx:decode(table_fixture()),
     meck:new([rinamo_tables, rinamo_items], [non_strict, passthrough]),
     meck:expect(rinamo_tables, load_table_def, 2, TableDef),
-    meck:expect(rinamo_items, put_item, 3, ok),
+    meck:expect(rinamo_items, put_item, 4, ok),
 
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
     PutItemRequest = jsx:decode(item_fixture()),
