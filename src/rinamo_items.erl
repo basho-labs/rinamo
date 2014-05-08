@@ -10,8 +10,15 @@
 
 -spec put_item(binary(), any(), any(), #state{ user_key :: binary() }) -> ok.
 put_item(Table, Item, Expectations, AWSContext) ->
-    % TODO:  expectations (lazy conditional puts using read uncommitted)
     UserKey = AWSContext#state.user_key,
+    % TODO:  expectations (conditional puts)
+    StrongConsistency = case Expectations of
+        [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}] ->
+            true;
+        _ ->
+            false
+    end,
+    lager:debug("Using Strong Consistency: ~p~n", [StrongConsistency]),
     case get_keyschema(Table, AWSContext) of
         [{hash, HashKeyAttribute}] ->
             [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
