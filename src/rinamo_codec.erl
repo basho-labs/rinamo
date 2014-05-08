@@ -145,16 +145,12 @@ decode_put_expected([], Acc) ->
 decode_put_expected([Field|Rest], Acc) ->
     % TODO:  Fix order match that depends on array order
     {FieldName, Expectation} = Field,
-    {ExpectedData, FieldType, FieldValue} = case Expectation of
+    {Expected, FieldType, FieldValue} = case Expectation of
         [{<<"Exists">>, E}, {<<"Value">>, [{FT, FV}]}] ->
             {E, FT, FV};
         [{<<"Value">>, [{FT, FV}]}, {<<"Exists">>, E}] ->
             {E, FT, FV};
         _ -> {undefined, undefined, undefined}
-    end,
-    Expected = case ExpectedData of
-        <<"true">> -> true;
-        _ -> false
     end,
     decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]} | Acc]).
 
