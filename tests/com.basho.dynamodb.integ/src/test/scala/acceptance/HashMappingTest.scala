@@ -164,6 +164,12 @@ class HashMappingTest extends FunSpec
               Some("Title"), Some("EQ"), Some("Because Amazon."))
           assert("Tale of Two Databases".equals(query_result.getItems().get(0).get("Title").getS()))
         }
+        it ("should explode if invalid range operator is used") {
+          evaluating {
+            val query_result = Table.query(hash_table_name, "Id", "101",
+                Some("Title"), Some("FOO_OP"), Some("BAR"))
+          } should produce [IllegalArgumentException]
+        }
       }
     }
 

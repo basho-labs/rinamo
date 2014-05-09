@@ -143,7 +143,6 @@ decode_put_expected([{}], _) ->
 decode_put_expected([], Acc) ->
     lists:reverse(Acc);
 decode_put_expected([Field|Rest], Acc) ->
-    % TODO:  Fix order match that depends on array order
     {FieldName, Expectation} = Field,
     {ExpectedData, FieldType, FieldValue} = case Expectation of
         [{<<"Exists">>, E}, {<<"Value">>, [{FT, FV}]}] ->
