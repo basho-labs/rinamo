@@ -1,16 +1,24 @@
 -module(rinamo_items).
 
 -export([
-    put_item/3,
+    put_item/4,
     get_item/3,
     delete_item/3,
     query/3]).
 
 -include("rinamo.hrl").
 
--spec put_item(binary(), any(), #state{ user_key :: binary() }) -> ok.
-put_item(Table, Item, AWSContext) ->
+-spec put_item(binary(), any(), any(), #state{ user_key :: binary() }) -> ok.
+put_item(Table, Item, Expectations, AWSContext) ->
     UserKey = AWSContext#state.user_key,
+    % TODO:  expectations (conditional puts)
+    StrongConsistency = case Expectations of
+        [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}] ->
+            true;
+        _ ->
+            false
+    end,
+    lager:debug("Using Strong Consistency: ~p~n", [StrongConsistency]),
     case get_keyschema(Table, AWSContext) of
         [{hash, HashKeyAttribute}] ->
             [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
@@ -180,8 +188,9 @@ put_item_test() ->
 
     Table = <<"TableName">>,
     Item = kvc:path("Item", jsx:decode(item_fixture())),
+    Expectations = [{}],
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
-    _ = put_item(Table, Item, AWSContext),
+    _ = put_item(Table, Item, Expectations, AWSContext),
 
     meck:unload([rinamo_tables, rinamo_kv]).
 

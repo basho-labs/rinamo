@@ -53,22 +53,25 @@ fetch_items([SegmentId|Rest], Partition, KeyConditions, Acc) ->
         PartitionNS, ?RINAMO_SEPARATOR,
         PartitionId, ?RINAMO_SEPARATOR,
         SegmentId]),
-    {value, Segment} = rinamo_set:value(rinamo_set:client(), SB, SK),
+    case rinamo_set:value(rinamo_set:client(), SB, SK) of
+        {value, Segment} ->
+            lager:debug("Segment: ~p~n", [Segment]),
+            lager:debug("KeyConditions: ~p~n", [KeyConditions]),
 
-    lager:debug("Segment: ~p~n", [Segment]),
-    lager:debug("KeyConditions: ~p~n", [KeyConditions]),
-
-    % filter (using KeyConditions) and convert to expected aws output format.
-    % in short, this needs to strip the range key (used for ordering) out of
-    % each element and just pass back the item attribute list.
-    Converted = lists:foldl(fun(S_Item, S_Acc) ->
-        {_, ItemAttrList} = S_Item,
-        case filter_item(ItemAttrList, KeyConditions) of
-            true -> [ItemAttrList | S_Acc];
-            false -> S_Acc
-        end
-    end, [], Segment),
-    fetch_items(Rest, Partition, KeyConditions, Converted ++ Acc).
+            % filter (using KeyConditions) and convert to expected aws output format.
+            % in short, this needs to strip the range key (used for ordering) out of
+            % each element and just pass back the item attribute list.
+            Converted = lists:foldl(fun(S_Item, S_Acc) ->
+                {_, ItemAttrList} = S_Item,
+                case filter_item(ItemAttrList, KeyConditions) of
+                    true -> [ItemAttrList | S_Acc];
+                    false -> S_Acc
+                end
+            end, [], Segment),
+            fetch_items(Rest, Partition, KeyConditions, Converted ++ Acc);
+        notfound ->
+            fetch_items(Rest, Partition, KeyConditions, Acc)
+    end.
 
 
 filter_item(ItemAttrList, KeyConditions) ->

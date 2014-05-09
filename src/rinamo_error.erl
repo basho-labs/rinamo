@@ -114,6 +114,11 @@ make(validation_comparison_type) ->
         <<"ValidationException">>,
         <<"Comparison type not valid for query">>);
 
+make(return_values_invalid) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"Return values set to invalid value">>);
+
 % Basho Specific Errors
 
 make(missing_operation_target) ->

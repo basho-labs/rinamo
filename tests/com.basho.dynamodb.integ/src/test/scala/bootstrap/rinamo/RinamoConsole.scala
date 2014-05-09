@@ -1,4 +1,5 @@
-import bootstrap.rinamo.Boot
+package bootstrap.rinamo
+
 import scala.tools.nsc.MainGenericRunner
 
 import com.amazonaws._

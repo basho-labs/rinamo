@@ -143,19 +143,24 @@ decode_put_expected([{}], _) ->
 decode_put_expected([], Acc) ->
     lists:reverse(Acc);
 decode_put_expected([Field|Rest], Acc) ->
-    {FieldName, [{<<"Exists">>, ExpectedData}, {<<"Value">>, [{FieldType, FieldValue}]}]} = Field,
-    Expected = case ExpectedData of
-        <<"true">> -> true;
-        _ -> false
+    % TODO:  Fix order match that depends on array order
+    {FieldName, Expectation} = Field,
+    {ExpectedData, FieldType, FieldValue} = case Expectation of
+        [{<<"Exists">>, E}, {<<"Value">>, [{FT, FV}]}] ->
+            {E, FT, FV};
+        [{<<"Value">>, [{FT, FV}]}, {<<"Exists">>, E}] ->
+            {E, FT, FV};
+        _ -> {undefined, undefined, undefined}
     end,
-    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]} | Acc]).
+    ExpectedAtom = erlang:list_to_atom(string:to_lower(erlang:binary_to_list(ExpectedData))),
+    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, ExpectedAtom}, {FieldType, FieldValue}]} | Acc]).
 
 
 decode_table_attributes([], Acc) ->
     lists:reverse(Acc);
 decode_table_attributes([Attribute|Rest], Acc) ->
     decode_table_attributes(Rest, [[{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
-                                   {<<"AttributeType">>, kvc:path("AttributeType", Attribute)}] | Acc]).
+                                    {<<"AttributeType">>, kvc:path("AttributeType", Attribute)}] | Acc]).
 
 decode_2i([], Acc) ->
     lists:reverse(Acc);
@@ -175,7 +180,7 @@ decode_2i_key_schema([], Acc) ->
     lists:reverse(Acc);
 decode_2i_key_schema([Attribute|Rest], Acc) ->
     decode_2i_key_schema(Rest, [[{<<"AttributeName">>, kvc:path("AttributeName", Attribute)},
-                                {<<"KeyType">>, kvc:path("KeyType", Attribute)}] | Acc]).
+                                 {<<"KeyType">>, kvc:path("KeyType", Attribute)}] | Acc]).
 
 decode_key_conditions([], Acc) ->
     lists:reverse(Acc);
