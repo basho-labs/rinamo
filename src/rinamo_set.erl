@@ -8,10 +8,10 @@
 -include("rinamo_kv_types.hrl").
 
 client() ->
-  {ok,C} = riak:local_client(),
-  C.
+    {ok,C} = riak:local_client(),
+    C.
 
--spec value(any(), binary(), binary()) -> notfound | {value, list()}.
+-spec value(any(), binary(), binary()) -> {value, list()} | notfound.
 value(Client, Bucket, Key) ->
     case get(Client, Bucket, Key) of
         {ok, RO} -> {value, riak_kv_crdt:set_value(RO)};
@@ -52,5 +52,5 @@ read(Client, Bucket, Key) ->
     end.
 
 modify(Client, RO, CrdtOp) ->
-    Options = [{crdt_op, CrdtOp}, {retry_put_coordinator_failure,false}],
+    Options = [{crdt_op, CrdtOp}, {retry_put_coordinator_failure, false}],
     Client:put(RO, Options).
