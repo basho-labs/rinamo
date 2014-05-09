@@ -145,14 +145,15 @@ decode_put_expected([], Acc) ->
 decode_put_expected([Field|Rest], Acc) ->
     % TODO:  Fix order match that depends on array order
     {FieldName, Expectation} = Field,
-    {Expected, FieldType, FieldValue} = case Expectation of
+    {ExpectedData, FieldType, FieldValue} = case Expectation of
         [{<<"Exists">>, E}, {<<"Value">>, [{FT, FV}]}] ->
             {E, FT, FV};
         [{<<"Value">>, [{FT, FV}]}, {<<"Exists">>, E}] ->
             {E, FT, FV};
         _ -> {undefined, undefined, undefined}
     end,
-    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]} | Acc]).
+    ExpectedAtom = erlang:list_to_atom(string:to_lower(erlang:binary_to_list(ExpectedData))),
+    decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, ExpectedAtom}, {FieldType, FieldValue}]} | Acc]).
 
 
 decode_table_attributes([], Acc) ->
