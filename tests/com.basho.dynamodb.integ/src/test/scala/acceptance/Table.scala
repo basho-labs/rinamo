@@ -74,6 +74,12 @@ object Table {
     return client.putItem(request)
   }
 
+  def put(table_name:String)(items:Item*) {
+    for (item <- items) {
+      put(table_name, item)
+    }
+  }
+
   def get(
       table_name:String,
       _key:String, _type:String, _value:String): GetItemResult = {

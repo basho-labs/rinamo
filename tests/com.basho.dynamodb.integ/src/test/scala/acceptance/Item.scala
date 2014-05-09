@@ -7,19 +7,26 @@ import com.amazonaws.auth._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
 
-class Item {
+class Item(attributes:(String, String, String)*) {
   private var map: Map[String, AttributeValue] = Map()
+  for (attribute <- attributes) {
+    attribute match {
+      case (_name:String, _type:String, _value:String) =>
+        add(_name, _type, _value)
+      case _ => None
+    }
+  }
 
   def add(_name:String, _type:String, _value:String): Item = {
     val value = Item.build_value(_name, _type, _value)
     map += value
     return Item.this
   }
-  
+
   override def toString: String = {
     map.toString
   }
-  
+
   def asMap():Map[String, AttributeValue] = {
     return map
   }
@@ -31,5 +38,5 @@ object Item {
       case "N" => (_name, new AttributeValue().withN(_value))
       case "S" => (_name, new AttributeValue().withS(_value))
     }
-  }  
+  }
 }
