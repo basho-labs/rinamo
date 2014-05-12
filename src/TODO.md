@@ -1,14 +1,22 @@
-Complete Operation handling
+## TODO List
 
-  Query
-  Scan
-  LocalSecondaryIndexes
-  GlobalSecondaryIndexes
-* Batch Get, Batch Put... there are stubs in rinamo_codec.erl
+The following DynamoDB operations could use more work:
 
-Evaluate and remove TODO
+* Query
+* Scan
+* LocalSecondaryIndexes
+* GlobalSecondaryIndexes
+* Batch Get
+* Batch Put
 
-  Data Validation
-  Query Limits
+Additionally, there are a number of `TODO` elements scattered throughout the code path.  A set of [issues](https://github.com/basho-labs/rinamo/issues?state=open) has been created.
 
-Moar Tests
+### Area Review
+
+The following areas are also awaiting further love.
+
+* Data Validation
+* Query Limits / Quotas
+* API Metering
+* Provisioning
+* Index Housekeeping Jobs

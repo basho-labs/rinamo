@@ -8,7 +8,7 @@ A DynamoDB API implementation built on Riak 2.0.
 $ make
 ```
 
-## Testing
+## Unit Testing
 
 ```bash
 $ make test
@@ -78,10 +78,12 @@ $ vagrant provision rinamo-dev
 
 ## Rinamo Client Test Console
 
-Rinamo responds to requests issued by AWS Client APIs.  Anything can be used, but we package up a scala test console for use during development.  To fire it up run the following from within the vagrant development environment:
+Rinamo responds to requests issued by AWS Client APIs.  Anything can be used, but we package up a scala test console for use during development.  This makes it easy to use the AWS Java Client API to explore Rinamo.
+
+To fire up the console run the following from within the vagrant development environment:
 
 ```bash
-$ /vagrant/tests/com.basho.dynamodb.integ
+$ cd /vagrant/tests/com.basho.dynamodb.integ
 $ mvn test-compile scala:console; reset
 ```
 Then run commands like this:
@@ -94,7 +96,16 @@ scala> Table.list()
 res1: List[String] = List(books_range)
 ```
 
-For more examples, refer to [the console examples](https://github.com/basho-labs/rinamo/tree/rs-indexing/tests/com.basho.dynamodb.integ/console).
+For more examples, refer to [the console examples](https://github.com/basho-labs/rinamo/tree/master/tests/com.basho.dynamodb.integ/console).
+
+## Acceptance Testing
+
+Acceptance tests use the same commands availabe in the `Test Console`.
+
+```bash
+$ cd /vagrant/tests/com.basho.dynamodb.integ
+$ mvn test
+```
 
 ## Additional documentation
 

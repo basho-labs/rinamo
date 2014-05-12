@@ -1,13 +1,12 @@
-DynamoDB
+# Notes on DynamoDB
 
-API Reference:
-http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/Welcome.html
+## API Reference:
+* [API Reference](http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/Welcome.html)
+  * [Create Table](http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html)
+  * [Get Item](http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_GetItem.html)
+  * [Put Item](http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_PutItem.html)
+  * [Query](http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html)
 
-The following operations implemented (somewhat anyway)
-http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html
-http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_GetItem.html
-http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_PutItem.html
-http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
 
 Code Flow, roughly:
 rinamo_middleware_* -> rinamo_handler_root -> rinamo_api -> rinamo_codec -> [rinamo_tables|rinamo_items|indexing] -> rinamo_api -> rinamo_handler_root -> rinamo_middleware_*
