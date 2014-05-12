@@ -21,7 +21,7 @@ store(PartitionNS, PartitionId, Value, Item) ->
         PartitionId, ?RINAMO_SEPARATOR,
         SegmentId]),
     SV = {Value, Item},
-    _ = rinamo_set:add(rinamo_set:client(), SB, SK, SV),
+    _ = rinamo_crdt_set:add(rinamo_crdt_set:client(), SB, SK, SV),
 
     % store a pointer to this segment
     B = PartitionNS,
@@ -53,7 +53,7 @@ fetch_items([SegmentId|Rest], Partition, KeyConditions, Acc) ->
         PartitionNS, ?RINAMO_SEPARATOR,
         PartitionId, ?RINAMO_SEPARATOR,
         SegmentId]),
-    case rinamo_set:value(rinamo_set:client(), SB, SK) of
+    case rinamo_crdt_set:value(rinamo_crdt_set:client(), SB, SK) of
         {value, Segment} ->
             lager:debug("Segment: ~p~n", [Segment]),
             lager:debug("KeyConditions: ~p~n", [KeyConditions]),

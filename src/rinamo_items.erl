@@ -60,28 +60,30 @@ delete_item(Table, Key, AWSContext) ->
 query(Table, KeyConditions, AWSContext) ->
     UserKey = AWSContext#state.user_key,
 
-    [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
-     {range, {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator}},
-     {remaining, PostFilterConditions}] = map_key_conditions(Table, KeyConditions, AWSContext),
+    case map_key_conditions(Table, KeyConditions, AWSContext) of
+        [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
+         {remaining, PostFilterConditions}] ->
+             [get_item(Table, HashKeyValue, AWSContext)];
+        [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
+         {range, {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator}},
+         {remaining, PostFilterConditions}] ->
+              % ------- begin index concern
 
-    lager:debug("Hash Key Details: ~p,~p,~p,~p~n", [HashKeyAttr, HashKeyType, HashKeyValue, HashKeyOperator]),
-    lager:debug("Range Key Details: ~p,~p,~p~n", [RangeKeyAttr, RangeKeyOperands, RangeKeyOperator]),
-    lager:debug("Post Filter Details: ~p~n", [PostFilterConditions]),
+              M = rinamo_config:get_index_strategy(),
+              F = query,
+              A = [
+                  erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table, ?RINAMO_SEPARATOR, RangeKeyAttr]),
+                  HashKeyValue,
+                  {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator},
+                  PostFilterConditions
+              ],
+              lager:debug("Index Strat: ~p~n", [M]),
+              erlang:apply(M, F, A);
 
-    % ------- begin index concern
-
-    M = rinamo_config:get_index_strategy(),
-    F = query,
-    A = [
-        erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table, ?RINAMO_SEPARATOR, RangeKeyAttr]),
-        HashKeyValue,
-        {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator},
-        PostFilterConditions
-    ],
-    lager:debug("Index Strat: ~p~n", [M]),
-    erlang:apply(M, F, A).
-
-    % ------- end index concern
+              % ------- end index concern
+        _ ->
+            ok
+    end.
 
 %% Internal
 

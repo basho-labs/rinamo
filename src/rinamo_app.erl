@@ -60,5 +60,7 @@ get_routes() ->
     ]}].
 
 configure_riak() ->
+    riak_core_bucket_type:create(?RINAMO_COUNTER_TYPE, [{datatype, counter}]),
+    riak_core_bucket_type:activate(?RINAMO_COUNTER_TYPE),
     riak_core_bucket_type:create(?RINAMO_SET_TYPE, [{datatype, set}]),
     riak_core_bucket_type:activate(?RINAMO_SET_TYPE).
