@@ -15,7 +15,7 @@ create_table(Table, RawSchema, AWSContext) ->
     Table_K = Table,
     Table_V = jsx:encode(RawSchema),
 
-    R0 = rinamo_set:add(rinamo_set:client(), B, List_K, Table),
+    R0 = rinamo_crdt_set:add(rinamo_crdt_set:client(), B, List_K, Table),
 
     R1 = rinamo_kv:put(rinamo_kv:client(), B, Table_K, Table_V, "application/json"),
 
@@ -29,7 +29,7 @@ list_tables(AWSContext) ->
     B = UserKey,
     List_K = <<"TableList">>,
 
-    case rinamo_set:value(rinamo_set:client(), B, List_K) of
+    case rinamo_crdt_set:value(rinamo_crdt_set:client(), B, List_K) of
         notfound -> [];
         {value, List} -> List
     end.
@@ -65,7 +65,7 @@ delete_table(Table, AWSContext) ->
     _ = rinamo_kv:delete(rinamo_kv:client(), B, Table_K),
 
     List_K = <<"TableList">>,
-    _ = rinamo_set:remove(rinamo_set:client(), B, List_K, Table),
+    _ = rinamo_crdt_set:remove(rinamo_crdt_set:client(), B, List_K, Table),
 
     TD.
 
@@ -74,11 +74,11 @@ delete_table(Table, AWSContext) ->
 -include_lib("eunit/include/eunit.hrl").
 
 create_table_test() ->
-    meck:new([rinamo_kv, rinamo_set], [non_strict]),
+    meck:new([rinamo_kv, rinamo_crdt_set], [non_strict]),
     meck:expect(rinamo_kv, client, 0, ok),
-    meck:expect(rinamo_set, client, 0, ok),
+    meck:expect(rinamo_crdt_set, client, 0, ok),
     meck:expect(rinamo_kv, put, 5, ok),
-    meck:expect(rinamo_set, add, 4, ok),
+    meck:expect(rinamo_crdt_set, add, 4, ok),
 
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
     Table = <<"TableName">>,
@@ -94,13 +94,13 @@ create_table_test() ->
     Expected = {ok, ok},
     ?assertEqual(Expected, Actual),
 
-    meck:unload([rinamo_kv, rinamo_set]).
+    meck:unload([rinamo_kv, rinamo_crdt_set]).
 
 
 list_tables_test() ->
-    meck:new(rinamo_set, [non_strict]),
-    meck:expect(rinamo_set, client, 0, ok),
-    meck:expect(rinamo_set, value, 3, {value, [<<"one">>, <<"two">>, <<"three">>]}),
+    meck:new(rinamo_crdt_set, [non_strict]),
+    meck:expect(rinamo_crdt_set, client, 0, ok),
+    meck:expect(rinamo_crdt_set, value, 3, {value, [<<"one">>, <<"two">>, <<"three">>]}),
 
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
@@ -108,7 +108,7 @@ list_tables_test() ->
     Expected = [<<"one">>, <<"two">>, <<"three">>],
     ?assertEqual(Expected, Actual),
 
-    meck:unload(rinamo_set).
+    meck:unload(rinamo_crdt_set).
 
 load_table_def_test() ->
     meck:new(rinamo_kv, [non_strict]),
@@ -125,12 +125,12 @@ load_table_def_test() ->
     meck:unload(rinamo_kv).
 
 delete_table_test() ->
-    meck:new([rinamo_kv, rinamo_set], [non_strict]),
+    meck:new([rinamo_kv, rinamo_crdt_set], [non_strict]),
     meck:expect(rinamo_kv, client, 0, ok),
     meck:expect(rinamo_kv, get, 3, {value, <<"[\"Some_Table_Def_JSON_Here\"]">>}),
     meck:expect(rinamo_kv, delete, 3, ok),
-    meck:expect(rinamo_set, client, 0, ok),
-    meck:expect(rinamo_set, remove, 4, ok),
+    meck:expect(rinamo_crdt_set, client, 0, ok),
+    meck:expect(rinamo_crdt_set, remove, 4, ok),
 
     Table = <<"Another Table">>,
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
@@ -139,6 +139,6 @@ delete_table_test() ->
     Expected = [<<"Some_Table_Def_JSON_Here">>],
     ?assertEqual(Expected, Actual),
 
-    meck:unload([rinamo_kv, rinamo_set]).
+    meck:unload([rinamo_kv, rinamo_crdt_set]).
 
 -endif.

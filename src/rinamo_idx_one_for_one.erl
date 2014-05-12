@@ -16,7 +16,7 @@ store(PartitionNS, PartitionId, Value, Item) ->
         PartitionId, ?RINAMO_SEPARATOR,
         <<"RefList">>]),
     RV = Value,
-    _ = rinamo_set:add(rinamo_set:client(), RB, RK, RV),
+    _ = rinamo_crdt_set:add(rinamo_crdt_set:client(), RB, RK, RV),
 
     % store Item as a dispersed object in Riak
     % logic for a get has to consider this may not succeed
@@ -34,7 +34,7 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
         PartitionNS, ?RINAMO_SEPARATOR,
         PartitionId, ?RINAMO_SEPARATOR,
         <<"RefList">>]),
-    {value, RefList} = rinamo_set:value(rinamo_set:client(), RB, RK),
+    {value, RefList} = rinamo_crdt_set:value(rinamo_crdt_set:client(), RB, RK),
 
     lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
     lager:debug("Conditions: ~p~n", [Conditions]),
