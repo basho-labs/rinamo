@@ -10,7 +10,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling._
 import bootstrap.rinamo.RinamoConsole
 
 object Table {
-  val client = RinamoConsole.config()
+  var client = RinamoConsole.config()
   def create(
       table_name:String, key_name:String, key_type:String = "N",
       range_key_name:Option[String] = None,
@@ -165,4 +165,7 @@ object Table {
     client.scan(request)
   }
 
+  def reset() {
+    client = RinamoConsole.config()
+  }
 }
