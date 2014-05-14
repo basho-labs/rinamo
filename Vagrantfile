@@ -60,6 +60,26 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|
     # SSH agent forwarding
     config.ssh.forward_agent = true
 
-    config.vm.provision "shell", path: "deploy/provision.sh"
+    config.vm.provision "shell", path: "deploy/provision_rinamo.sh"
+  end
+
+  cluster.vm.define "keystone-dev".to_sym do |config|
+    config.vm.box = "ubuntu/trusty64"
+    config.vm.provider "virtualbox" do |vb|
+        vb.customize ["modifyvm", :id, "--cpus", "2"]
+        vb.customize ["modifyvm", :id, "--pae", "on"]
+        vb.customize ["modifyvm", :id, "--memory", "2048"]
+        vb.customize ["modifyvm", :id, "--acpi", "on"]
+        vb.customize ["modifyvm", :id, "--hpet", "on"]
+        vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
+    end
+    # Network
+    config.vm.hostname = "keystone"
+    config.vm.network :private_network, ip: "10.0.0.3"
+
+    # SSH agent forwarding
+    config.ssh.forward_agent = true
+
+    config.vm.provision "shell", path: "deploy/provision_keystone.sh"
   end
 end
