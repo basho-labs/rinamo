@@ -1,6 +1,6 @@
 -module(rinamo_crdt).
 
--export([read_and_modify/6, get/4]).
+-export([read_and_modify/6, get/4, delete/4]).
 
 -include("rinamo.hrl").
 -include("rinamo_kv_types.hrl").
@@ -13,6 +13,10 @@ read_and_modify(Client, Bucket, Key, Value, Op, Type) ->
 get(Client, Bucket, Key, Type) ->
     {_, BucketType} = lists:keyfind(Type, 1, ?RINAMO_CRDT_MAP),
     Client:get({BucketType, Bucket}, Key, []).
+
+delete(Client, Bucket, Key, Type) ->
+    {_, BucketType} = lists:keyfind(Type, 1, ?RINAMO_CRDT_MAP),
+    Client:delete({BucketType, Bucket}, Key, []).
 
 % Internal
 read(Client, Bucket, Key, Type) ->

@@ -1,10 +1,10 @@
 -module(rinamo_crdt_set).
 
 -export([client/0]).
--export([add/4, remove/4]).
+-export([add/4, remove/4, destroy/3]).
 -export([value/3]).
 
--import(rinamo_crdt, [read_and_modify/6, get/4]).
+-import(rinamo_crdt, [read_and_modify/6, get/4, delete/4]).
 
 client() ->
     {ok,C} = riak:local_client(),
@@ -28,3 +28,6 @@ remove(Client, Bucket, Key, Object) when is_list(Object) ->
     read_and_modify(Client, Bucket, Key, Object, remove_all, riak_dt_orswot);
 remove(Client, Bucket, Key, Object) ->
     read_and_modify(Client, Bucket, Key, Object, remove, riak_dt_orswot).
+
+destroy(Client, Bucket, Key) ->
+    delete(Client, Bucket, Key, riak_dt_orswot).

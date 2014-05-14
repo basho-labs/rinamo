@@ -1,10 +1,10 @@
 -module(rinamo_crdt_counter).
 
 -export([client/0]).
--export([increment/4, decrement/4]).
+-export([increment/4, decrement/4, destroy/3]).
 -export([value/3]).
 
--import(rinamo_crdt, [read_and_modify/6, get/4]).
+-import(rinamo_crdt, [read_and_modify/6, get/4, delete/4]).
 
 -include("rinamo.hrl").
 -include("rinamo_kv_types.hrl").
@@ -27,3 +27,6 @@ value(Client, Bucket, Key) ->
         {ok, RO} -> {value, riak_kv_crdt:counter_value(RO)};
         _ -> notfound
     end.
+
+destroy(Client, Bucket, Key) ->
+    delete(Client, Bucket, Key, riak_dt_pncounter).
