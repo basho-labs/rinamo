@@ -78,14 +78,16 @@ decode_create_table(Json) ->
     TableName = kvc:path("TableName", Json),
     AttributeDefinitions = decode_table_attributes(kvc:path("AttributeDefinitions", Json), []),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Json), []),
-    SecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Json), []),
+    LocalSecondaryIndexes = decode_2i(kvc:path("LocalSecondaryIndexes", Json), []),
+    GlobalSecondaryIndexes = decode_2i(kvc:path("GlobalSecondaryIndexes", Json), []),
     ProvisionedThroughput = [{<<"ReadCapacityUnits">>, kvc:path("ProvisionedThroughput.ReadCapacityUnits", Json)},
                              {<<"WriteCapacityUnits">>, kvc:path("ProvisionedThroughput.WriteCapacityUnits", Json)}],
 
     [{tablename, TableName},
      {fields, AttributeDefinitions},
      {key_schema, KeySchema},
-     {lsi, SecondaryIndexes},
+     {lsi, LocalSecondaryIndexes},
+     {gsi, GlobalSecondaryIndexes},
      {provisioned_throughput, ProvisionedThroughput},
      {raw_schema, Json}].
 
@@ -166,12 +168,14 @@ decode_2i([], Acc) ->
 decode_2i([Index|Rest], Acc) ->
     IndexName = kvc:path("IndexName", Index),
     KeySchema = decode_2i_key_schema(kvc:path("KeySchema", Index), []),
-    Projection = [{non_key_attributes, kvc:path("Projection.NonKeyAttributes", Index)},
-                  {projection_type, kvc:path("Projection.ProjectionType", Index)}],
+    Projection = [{<<"NonKeyAttributes">>, kvc:path("Projection.NonKeyAttributes", Index)},
+                  {<<"ProjectionType">>, kvc:path("Projection.ProjectionType", Index)}],
 
-    IndexResult = [{IndexName,
-             [{key_schema, KeySchema},
-              {projection, Projection}]}],
+    IndexResult = [
+        {<<"IndexName">>, IndexName},
+        {<<"KeySchema">>, KeySchema},
+        {<<"Projection">>, Projection}],
+
     decode_2i(Rest, [IndexResult|Acc]).
 
 
@@ -365,13 +369,14 @@ decode_create_table_test() ->
                     [{<<"AttributeName">>, <<"Id">>}, {<<"KeyType">>, <<"HASH">>}],
                     [{<<"AttributeName">>, <<"Date">>}, {<<"KeyType">>, <<"RANGE">>}]
                 ]},
-                {lsi, [[{<<"2i_name">>,
-                        [{key_schema, [
+                {lsi, [[{<<"IndexName">>, <<"2i_name">>},
+                        {<<"KeySchema">>, [
                             [{<<"AttributeName">>, <<"attr_name">>}, {<<"KeyType">>, <<"key_type">>}]
                         ]},
-                        {projection, [{non_key_attributes, [<<"attr_name">>]},
-                                      {projection_type, <<"projection_type">>}]}]
-                }]]},
+                        {<<"Projection">>, [{<<"NonKeyAttributes">>, [<<"attr_name">>]},
+                                      {<<"ProjectionType">>, <<"projection_type">>}]}]
+                ]},
+                {gsi,[]},
                 {provisioned_throughput, [{<<"ReadCapacityUnits">>, 20},
                                           {<<"WriteCapacityUnits">>, 5}]},
                 {raw_schema, jsx:decode(Json_Bin)}
