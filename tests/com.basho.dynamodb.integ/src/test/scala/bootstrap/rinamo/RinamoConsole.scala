@@ -18,7 +18,7 @@ object RinamoConsole {
      MainGenericRunner.main(args)
      exit(0)
    }
-   
+
    def config():AmazonDynamoDBClient = {
      val input_stream = classOf[DynamoDBTest]
                           .getResourceAsStream("AwsCredentials.properties")
@@ -39,7 +39,7 @@ object RinamoConsole {
      config.setMaxConnections(10)
      config.setUserAgent("Rinamo Console")
      val client = new AmazonDynamoDBClient(creds, config)
-     
+
      if (host != null && host.length() > 0) {
        client.setEndpoint(protocol + "://" + host + ":" + port)
      }
