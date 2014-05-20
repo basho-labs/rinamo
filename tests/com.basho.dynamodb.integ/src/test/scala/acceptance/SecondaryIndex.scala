@@ -2,8 +2,8 @@ package acceptance
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.MutableList
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement
 
 class Attributes(attributes:(String, String)*) {
   private var list: List[AttributeDefinition] = List()
@@ -40,6 +40,9 @@ class KeySchema {
   
   def add(_name:String, _type:com.amazonaws.services.dynamodbv2.model.KeyType) = {
     list :::= List(new KeySchemaElement().withAttributeName(_name).withKeyType(_type))
+    // AWS requires HASH come before RANGE or it yells & I don't want to have to worry
+    // about this in each test case
+    list = list.sortBy(_.getKeyType)
   }
   
   override def toString: String = {
@@ -98,8 +101,9 @@ object ProvisionedThroughput {
 }
 
 object Projection {
-  def build_value(_name_list: List[String]): com.amazonaws.services.dynamodbv2.model.Projection = {
+  def build_value(_type:com.amazonaws.services.dynamodbv2.model.ProjectionType, _name_list: List[String]): com.amazonaws.services.dynamodbv2.model.Projection = {
     return new com.amazonaws.services.dynamodbv2.model.Projection().
+      withProjectionType(_type).
       withNonKeyAttributes(asJavaCollection(_name_list))
   }
 }
