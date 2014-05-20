@@ -45,6 +45,22 @@ object Table {
     return client.createTable(request)
   }
 
+  def create(
+      table_name:String,
+      key_schema:KeySchema,
+      attributes:Attributes,
+      secondary_indexes:LocalSecondaryIndexes,
+      provisioned_throughput:ProvisionedThroughput): CreateTableResult = {
+    val request = new com.amazonaws.services.dynamodbv2.model.CreateTableRequest().
+      withTableName(table_name).
+      withKeySchema(key_schema.asCollection()).
+      withAttributeDefinitions(attributes.asCollection()).
+      withLocalSecondaryIndexes(secondary_indexes.asCollection()).
+      withProvisionedThroughput(provisioned_throughput)
+
+    return client.createTable(request)
+  }
+
   def list(): List[String] = {
     return client.listTables().getTableNames().toList
   }

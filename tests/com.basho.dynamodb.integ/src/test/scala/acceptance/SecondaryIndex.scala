@@ -42,6 +42,10 @@ class KeySchema {
     list :::= List(new KeySchemaElement().withAttributeName(_name).withKeyType(_type))
   }
   
+  override def toString: String = {
+    list.toString
+  }
+
   def asList(): List[KeySchemaElement] = {
     return list
   }
@@ -51,25 +55,45 @@ class KeySchema {
   }
 }
 
-object LocalSecondaryIndex {
-  def build_list(
+class LocalSecondaryIndexes(
     indexes:(
       String,
-      List[com.amazonaws.services.dynamodbv2.model.KeySchemaElement],
-      com.amazonaws.services.dynamodbv2.model.Projection)*)
-    : java.util.Collection[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = {
-
-    val lsi_list: MutableList[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = MutableList()
-    for (index <- indexes) {
-      index match {
-        case (_index_name, _key_schema, _projection) =>
-          lsi_list +=  new com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex()
-            .withIndexName(_index_name).withKeySchema(asJavaCollection(_key_schema))
-            .withProjection(_projection)
-        case _ => None
-      }
+      KeySchema,
+      com.amazonaws.services.dynamodbv2.model.Projection)*) {
+  var list: List[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = List()
+  for (index <- indexes) {
+    index match {
+      case (_index_name, _key_schema, _projection) =>
+        add(_index_name, _key_schema, _projection)
+      case _ => None
     }
-    return asJavaCollection(lsi_list)
+  }
+
+  def add(
+      _index_name:String, _key_schema:KeySchema,
+      _projection:com.amazonaws.services.dynamodbv2.model.Projection) {
+
+    list :::=  List(new com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex()
+      .withIndexName(_index_name).withKeySchema(_key_schema.asCollection)
+      .withProjection(_projection))
+  }
+
+  override def toString: String = {
+    list.toString
+  }
+
+  def asList(): List[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = {
+    return list
+  }
+
+  def asCollection(): java.util.Collection[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = {
+    return asJavaCollection(list)
+  }
+}
+
+object ProvisionedThroughput {
+  def build_value(_rc:Long, _wc:Long): com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput = {
+    return new com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput(_rc, _wc)
   }
 }
 
