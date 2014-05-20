@@ -17,7 +17,7 @@
 % ---- Create Table ---- %
 
 create_table(DynamoRequest, AWSContext) ->
-    [ {_, Table}, {_, Fields}, {_, KeySchema}, {lsi, _},
+    [ {_, Table}, {_, Fields}, {_, KeySchema}, {lsi, LSI}, {gsi, GSI},
       {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
 
     {MegaSecs, Secs, MicroSecs} = now(),
@@ -35,8 +35,8 @@ create_table(DynamoRequest, AWSContext) ->
              {<<"AttributeDefinitions">>, Fields},
              {<<"KeySchema">>, KeySchema},
              {<<"ProvisionedThroughput">>, ProvisionedThroughput},
-             {<<"LocalSecondaryIndexes">>, [{}]},
-             {<<"GlobalSecondaryIndexes">>, [{}]},
+             {<<"LocalSecondaryIndexes">>, LSI},
+             {<<"GlobalSecondaryIndexes">>, GSI},
              {<<"TableSizeBytes">>, 0},
              {<<"TableStatus">>, <<"CREATING">>},
              {<<"CreationDateTime">>, CreationTime}
@@ -194,8 +194,8 @@ create_table_test() ->
       {<<"ReadCapacityUnits">>,10},
       {<<"WriteCapacityUnits">>,5}
     ], ProvisionedThroughput),
-    ?assertEqual([{}], LSI),
-    ?assertEqual([{}], GSI),
+    ?assertEqual([], LSI),
+    ?assertEqual([], GSI),
     ?assertEqual(0, TableSize),
     ?assert(CreationDateTime > 0),
     ?assertEqual(<<"CREATING">>, TableStatus),
