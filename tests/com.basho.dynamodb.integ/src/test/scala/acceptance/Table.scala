@@ -51,6 +51,7 @@ object Table {
       attributes:Attributes,
       secondary_indexes:LocalSecondaryIndexes,
       provisioned_throughput:ProvisionedThroughput): CreateTableResult = {
+
     val request = new com.amazonaws.services.dynamodbv2.model.CreateTableRequest().
       withTableName(table_name).
       withKeySchema(key_schema.asCollection()).
