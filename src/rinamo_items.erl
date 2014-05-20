@@ -254,10 +254,10 @@ map_key_condition_test() ->
     meck:unload([rinamo_tables, rinamo_kv]).
 
 query_one_one_test() ->
-    meck:new([rinamo_config, rinamo_tables, rinamo_kv, rinamo_set], [non_strict]),
+    meck:new([rinamo_config, rinamo_tables, rinamo_kv, rinamo_crdt_set], [non_strict]),
     meck:expect(rinamo_config, get_index_strategy, 0, rinamo_idx_one_for_one),
-    meck:expect(rinamo_set, client, 0, ok),
-    meck:expect(rinamo_set, value, 3, {value, [<<"Book 102 Title">>]}),
+    meck:expect(rinamo_crdt_set, client, 0, ok),
+    meck:expect(rinamo_crdt_set, value, 3, {value, [<<"Book 102 Title">>]}),
     meck:expect(rinamo_kv, client, 0, ok),
     meck:expect(rinamo_kv, get, 3, {value,
         jsx:encode([
@@ -284,13 +284,13 @@ query_one_one_test() ->
 
     ?assertEqual(Expected, Actual),
 
-    meck:unload([rinamo_config, rinamo_tables, rinamo_kv, rinamo_set]).
+    meck:unload([rinamo_config, rinamo_tables, rinamo_kv, rinamo_crdt_set]).
 
 query_item_proxy_test() ->
-    meck:new([rinamo_config, rinamo_tables, rinamo_set], [non_strict]),
+    meck:new([rinamo_config, rinamo_tables, rinamo_crdt_set], [non_strict]),
     meck:expect(rinamo_config, get_index_strategy, 0, rinamo_idx_item_proxies),
-    meck:expect(rinamo_set, client, 0, ok),
-    meck:expect(rinamo_set, value, 3, {value,
+    meck:expect(rinamo_crdt_set, client, 0, ok),
+    meck:expect(rinamo_crdt_set, value, 3, {value,
         [{<<"Book 101">>,
          [{<<"Id">>,[{<<"N">>,<<"101">>}]},
           {<<"Title">>,[{<<"S">>,<<"Book 101">>}]},
@@ -319,7 +319,7 @@ query_item_proxy_test() ->
 
     ?assertEqual(Expected, Actual),
 
-    meck:unload([rinamo_config, rinamo_tables, rinamo_set]).
+    meck:unload([rinamo_config, rinamo_tables, rinamo_crdt_set]).
 
 
 -endif.
