@@ -2,7 +2,6 @@ package acceptance
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.MutableList
-
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition
 
@@ -53,13 +52,24 @@ class KeySchema {
 }
 
 object LocalSecondaryIndex {
-  def build_value(
-      _index_name: String,
-      _key_schema:List[com.amazonaws.services.dynamodbv2.model.KeySchemaElement],
-      _projection: com.amazonaws.services.dynamodbv2.model.Projection) = {
-    new com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex()
-      .withIndexName(_index_name).withKeySchema(asJavaCollection(_key_schema))
-      .withProjection(_projection)
+  def build_list(
+    indexes:(
+      String,
+      List[com.amazonaws.services.dynamodbv2.model.KeySchemaElement],
+      com.amazonaws.services.dynamodbv2.model.Projection)*)
+    : java.util.Collection[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = {
+
+    val lsi_list: MutableList[com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex] = MutableList()
+    for (index <- indexes) {
+      index match {
+        case (_index_name, _key_schema, _projection) =>
+          lsi_list +=  new com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex()
+            .withIndexName(_index_name).withKeySchema(asJavaCollection(_key_schema))
+            .withProjection(_projection)
+        case _ => None
+      }
+    }
+    return asJavaCollection(lsi_list)
   }
 }
 
