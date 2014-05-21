@@ -89,7 +89,7 @@ class QueryMappingTest extends FunSpec
               Some("Title"), Some("BETWEEN"), Some("A"), Some("Z"))
           assert(query_result.getCount() == 2)
         }
-        it ("finds all values when using hash key only") {
+        it ("finds all range values when using hash key only") {
           val query_result = Table.query(range_table_name, "Id", "101")
           assert(query_result.getCount() == 2)
         }

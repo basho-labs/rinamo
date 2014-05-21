@@ -115,7 +115,7 @@ class HashMappingTest extends FunSpec
         assert("{}".equals(result.toString()))
       }
 
-      it ("should fail put if conditional expectation fails") {
+      it ("should fail put item if conditional expectation fails") {
         evaluating {
           val invalid_expect = new ExpectedAttributeValue(
               new AttributeValue("Bar")).withExists(true)
