@@ -19,6 +19,7 @@ put_item(Table, Item, Expectations, AWSContext) ->
             false
     end,
     lager:debug("Using Strong Consistency: ~p~n", [StrongConsistency]),
+    % TODO: expand usage for LSI and GSI use cases
     case get_keyschema(Table, AWSContext) of
         [{hash, HashKeyAttribute}] ->
             [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),

@@ -127,6 +127,10 @@ object Table {
   }
 
   /* If using only the hash key, this is equivalent to get, but returns a count */
+  /* this has a few problems:
+   *   - uses specific attribute types (withN, withS)
+   *   - assumes range key, does not work with LSI and GSI
+   */
   def query(table_name:String,
       hash_key:String, hash_value:String,
       range_key:Option[String] = None,
