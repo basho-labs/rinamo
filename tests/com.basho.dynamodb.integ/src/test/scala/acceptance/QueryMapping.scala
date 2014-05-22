@@ -46,51 +46,51 @@ class QueryMappingTest extends FunSpec
 
       describe ("read data, query item") {
         it ("from table using EQ") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("EQ"), Some("Some Title"))
           assert(query_result.getCount() == 1)
           assert("Some Title".equals(query_result.getItems().get(0).get("Title").getS()))
         }
         it ("from table using LE") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("LE"), Some("Tale of Two Databases"))
           assert(query_result.getCount() == 2)
         }
         it ("from table using LT") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("LT"), Some("Tale of Two Databases"))
           assert(query_result.getCount() == 1)
         }
         it ("from table using GE") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("GE"), Some("Tale of Two Databases"))
           assert(query_result.getCount() == 1)
         }
         it ("from table using GT") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("GT"), Some("Tale of Two Databases"))
           assert(query_result.getCount() == 0)
         }
         it ("from table using BEGINS_WITH") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("BEGINS_WITH"), Some("Some"))
           assert(query_result.getCount() == 1)
           assert("Some Title".equals(query_result.getItems().get(0).get("Title").getS()))
         }
         it ("from table using BETWEEN") {
-          val query_result = Table.query(
+          val query_result = Table.range_query(
               range_table_name, "Id", "101",
               Some("Title"), Some("BETWEEN"), Some("A"), Some("Z"))
           assert(query_result.getCount() == 2)
         }
         it ("finds all range values when using hash key only") {
-          val query_result = Table.query(range_table_name, "Id", "101")
+          val query_result = Table.range_query(range_table_name, "Id", "101")
           assert(query_result.getCount() == 2)
         }
       }
