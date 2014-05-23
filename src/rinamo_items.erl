@@ -350,7 +350,6 @@ query_one_one_test() ->
 
     ?assertEqual(Expected, Actual),
 
-%    meck:unload([rinamo_config, rinamo_tables, rinamo_crdt_set]).
     meck:unload([rinamo_config, rinamo_tables, rinamo_crdt_set]).
 
 query_item_proxy_test() ->
