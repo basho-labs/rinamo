@@ -25,11 +25,11 @@ val table_result = Table.create("LSI_Test_Table", tableKey, table_attributes, se
 
 // create and put items
 val i1 = new Item(
-    ("Artist", "S", "Air Supply"),
-    ("SongTitle", "S", "All Out of Love"),
-    ("AlbumTitle", "S", "Ultimate Air Supply"),
-    ("Genre", "S", "Pop"),
-    ("Year", "S", "1990"))
+  ("Artist", "S", "Air Supply"),
+  ("SongTitle", "S", "All Out of Love"),
+  ("AlbumTitle", "S", "Ultimate Air Supply"),
+  ("Genre", "S", "Pop"),
+  ("Year", "S", "1990"))
 
 val i2 = new Item(
   ("Artist", "S", "Enya"),
@@ -55,13 +55,13 @@ val i4 = new Item(
 Table.put("LSI_Test_Table")(i1, i2, i3, i4)
 
 // Range Query (returns 1 result)
-val key_conditions = new KeyConditions(
+val r_key_conditions = new KeyConditions(
   ("Artist", "S", "EQ", "Enya", None),
   ("SongTitle", "S", "GT", "O", None))
-Table.query("LSI_Test_Table", key_conditions)
+Table.query("LSI_Test_Table", r_key_conditions)
 
 // LSI Query (returns 2 results)
-val key_conditions = new KeyConditions(
-    ("Artist", "S", "EQ", "Enya", None),
-    ("AlbumTitle", "S", "GT", "A", None))
-Table.query("LSI_Test_Table", key_conditions, Some("AlbumTitleIndex"))
+val l_key_conditions = new KeyConditions(
+  ("Artist", "S", "EQ", "Enya", None),
+  ("AlbumTitle", "S", "GT", "A", None))
+Table.query("LSI_Test_Table", l_key_conditions, Some("AlbumTitleIndex"))
