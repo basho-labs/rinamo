@@ -145,13 +145,13 @@ delete_item(DynamoRequest, AWSContext) ->
 
 query(DynamoRequest, AWSContext) ->
     [{attributes_to_get, _}, {consistent_read, _}, {exclusive_start, _},
-    {index_name, _}, {key_conditions, KeyConditions}, {limit, _},
+    {index_name, IndexName}, {key_conditions, KeyConditions}, {limit, _},
     {return_consumed_capacity, _}, {scan_index_forward, _}, {select, _},
     {tablename, TableName}] = rinamo_codec:decode_query(DynamoRequest),
 
-    lager:debug("Query Decode: ~p~n", [KeyConditions]),
+    lager:debug("Query Decode: ~p, ~p~n", [IndexName, KeyConditions]),
 
-    Result = rinamo_items:query(TableName, KeyConditions, AWSContext),
+    Result = rinamo_items:query(TableName, IndexName, KeyConditions, AWSContext),
     lager:debug("Query Result: ~p~n", [Result]),
     [{<<"Items">>, Result}, {<<"Count">>, length(Result)}].
 
