@@ -6,8 +6,6 @@
 -include("rinamo.hrl").
 
 create_table(Table, RawSchema, AWSContext) ->
-    lager:debug("RawSchema: ~p~n", [RawSchema]),
-
     UserKey = AWSContext#state.user_key,
 
     B = UserKey,
