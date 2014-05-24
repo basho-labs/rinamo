@@ -170,10 +170,18 @@ object ProvisionedThroughput {
 }
 
 object Projection {
-  def build_value(_type:com.amazonaws.services.dynamodbv2.model.ProjectionType, _name_list: List[String]): com.amazonaws.services.dynamodbv2.model.Projection = {
-    return new com.amazonaws.services.dynamodbv2.model.Projection().
-      withProjectionType(_type).
-      withNonKeyAttributes(asJavaCollection(_name_list))
+  def build_value(_type:com.amazonaws.services.dynamodbv2.model.ProjectionType, _name_list: Option[List[String]] = None): com.amazonaws.services.dynamodbv2.model.Projection = {
+    _name_list match {
+      case Some(_name_list) => {
+        return new com.amazonaws.services.dynamodbv2.model.Projection().
+          withProjectionType(_type).
+          withNonKeyAttributes(asJavaCollection(_name_list))
+      }
+      case _ => {
+        return new com.amazonaws.services.dynamodbv2.model.Projection().
+          withProjectionType(_type)
+      }
+    }
   }
 }
 
