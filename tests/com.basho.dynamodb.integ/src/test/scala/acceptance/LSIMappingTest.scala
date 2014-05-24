@@ -17,7 +17,7 @@ import com.jayway.awaitility.Awaitility._
  * Test modeled after:
  * http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSILowLevelJava.Example.html
  */
-class LSIMapping extends FunSpec
+class LSIMappingTest extends FunSpec
   with AWSHelper with MockitoSugar with Matchers
   with BeforeAndAfterEach with AwaitilitySupport {
 
@@ -139,15 +139,20 @@ class LSIMapping extends FunSpec
     ("OrderStatus", "S", "OUT FOR DELIVERY"),
     ("ShipmentTrackingId", "S", "383283"))
 
-  describe ("[?US247961?]: table type, lsi, LWW behavior") {
+  describe ("[US247961]: table type, lsi, LWW behavior") {
     val lsi_table_name = "test_table_lsi"
     it ("should create lsi table") {
+      logger.info("Creating Table ...")
       val table_lsi:CreateTableResult = Table.create(lsi_table_name, tableKey, table_attributes, secondary_indexes, provisioned_throughput)
-      await atMost(2, MINUTES) until {
+      await atMost(2, MINUTES) until { tableLoaded }
+    }
+    def tableLoaded() : Boolean = {
+      try {
         val result = Table.describe(lsi_table_name)
-        // TODO:  and these together, once rinamo goes async
-        "ACTIVE".equals(result.getTable().getTableStatus())
         lsi_table_name.equals(result.getTable().getTableName())
+      }
+      catch {
+        case e: Throwable => false;
       }
     }
     describe ("lsi operations") {
