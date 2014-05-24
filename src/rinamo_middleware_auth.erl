@@ -20,14 +20,14 @@ execute(Req, Env) ->
                     {halt, NextReq}
             end;
         _ ->
-            case cowboy_req:method(Req) of
-                {<<"POST">>, _} ->
-                    execute_auth_handler(AuthToken, Req, Env);
-                {<<>>, _} ->
-                    % observed that cowboy does this *sometimes*
-                    % https://github.com/extend/cowboy/issues/448
+            {Method, _} = cowboy_req:method(Req),
+            case Method of
+                <<"POST">> ->
                     execute_auth_handler(AuthToken, Req, Env);
                 _ ->
+                    % observed that sometimes AWS java client sends <<>> or <<"T">>
+                    % may be related to:  https://github.com/extend/cowboy/issues/448
+                    lager:warning("Invalid Method: ~p~n", [Method]),
                     ErrorMsg = rinamo_error:make(incomplete_signature),
                     {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
                     {halt, NextReq}
