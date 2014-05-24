@@ -146,7 +146,7 @@ class LSIMappingTest extends FunSpec
       val table_lsi:CreateTableResult = Table.create(lsi_table_name, tableKey, table_attributes, secondary_indexes, provisioned_throughput)
       await atMost(2, MINUTES) until { tableLoaded }
     }
-    def tableLoaded() : Boolean = {
+    def tableLoaded(): Boolean = {
       try {
         val result = Table.describe(lsi_table_name)
         lsi_table_name.equals(result.getTable().getTableName())
