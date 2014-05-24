@@ -27,7 +27,7 @@
   </scm>
 
   <properties>
-    <aws.sdk.version>1.7.1</aws.sdk.version>
+    <aws.sdk.version>1.7.11</aws.sdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <powermock.version>1.5</powermock.version>
@@ -57,7 +57,7 @@
         <dependency>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-nop</artifactId>
-          <version>1.7.5</version>
+          <version>1.7.7</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -68,7 +68,7 @@
         <dependency>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-simple</artifactId>
-          <version>1.7.5</version>
+          <version>1.7.7</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -150,11 +150,6 @@
           <!--
           <skipTests>true</skipTests>
           -->
-          <systemPropertyVariables>
-            <org.slf4j.simpleLogger.defaultLogLevel>debug</org.slf4j.simpleLogger.defaultLogLevel>
-            <org.slf4j.simpleLogger.showDateTime>true</org.slf4j.simpleLogger.showDateTime>
-            <org.slf4j.simpleLogger.dateTimeFormat>yyyy-MM-dd HH:mm:ss</org.slf4j.simpleLogger.dateTimeFormat>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
       <!-- Run Scala Test from CLI -->
@@ -171,6 +166,11 @@
             <jvmArg>-Xms64m</jvmArg>
             <jvmArg>-Xmx128m</jvmArg>
           </jvmArgs>
+          <systemPropertyVariables>
+            <org.slf4j.simpleLogger.defaultLogLevel>debug</org.slf4j.simpleLogger.defaultLogLevel>
+            <org.slf4j.simpleLogger.showDateTime>true</org.slf4j.simpleLogger.showDateTime>
+            <org.slf4j.simpleLogger.dateTimeFormat>yyyy-MM-dd HH:mm:ss</org.slf4j.simpleLogger.dateTimeFormat>
+          </systemPropertyVariables>
         </configuration>
         <executions>
           <execution>
@@ -214,7 +214,7 @@
     <dependency>
       <groupId>com.jayway.awaitility</groupId>
       <artifactId>awaitility-scala</artifactId>
-      <version>1.3.5</version>
+      <version>1.6.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
