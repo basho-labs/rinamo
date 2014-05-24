@@ -28,7 +28,6 @@ execute(Req, Env) ->
                     % https://github.com/extend/cowboy/issues/448
                     execute_auth_handler(AuthToken, Req, Env);
                 _ ->
-                    lager:debug("WTF: ~p~n", [cowboy_req:method(Req)]),
                     ErrorMsg = rinamo_error:make(incomplete_signature),
                     {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
                     {halt, NextReq}
