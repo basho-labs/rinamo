@@ -143,19 +143,28 @@ store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, 
 store_lsi(UserKey, Table, [Index|Rest], Item) ->
     [{<<"IndexName">>, IndexName},
      {<<"KeySchema">>, IKeySchema},
-     {<<"Projection">>, [{<<"ProjectionType">>, ProjectionType},
-                         {<<"NonKeyAttributes">>, NonKeyAttributes}]}] = Index,
+     {<<"Projection">>, _}] = Index,
 
+    % TODO: do something more interesting with Projection
+    % NonKeyAttributes may be missing
+    %[{<<"ProjectionType">>, ProjectionType},
+    % {<<"NonKeyAttributes">>, NonKeyAttributes}] = Projection
     KeySchema = map_key_types(IKeySchema, []),
     _ = case KeySchema of
-            [{HashKeyAttribute, hash}, {RangeKeyAttribute, range}] ->
-                IndexAndRangeAttr = erlang:iolist_to_binary([IndexName, ?RINAMO_SEPARATOR, RangeKeyAttribute]),
-                [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
-                [{RangeFieldType, RangeKeyValue}] = kvc:path(RangeKeyAttribute, Item),
-                store_range_key(UserKey, Table, IndexAndRangeAttr, HashKeyValue, RangeKeyValue, Item);
-            _ ->
-                % error?
-                ok
+        [{HashKeyAttribute, hash}, {RangeKeyAttribute, range}] ->
+            lager:debug("RangeKeyAttribute: ~p~n", [RangeKeyAttribute]),
+            lager:debug("Item: ~p~n", [Item]),
+            IndexAndRangeAttr = erlang:iolist_to_binary([IndexName, ?RINAMO_SEPARATOR, RangeKeyAttribute]),
+            [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
+            case kvc:path(RangeKeyAttribute, Item) of
+                [{RangeFieldType, RangeKeyValue}] ->
+                    store_range_key(UserKey, Table, IndexAndRangeAttr, HashKeyValue, RangeKeyValue, Item);
+                [] -> ok;
+                _ -> ok
+            end;
+        _ ->
+            % error?
+            ok
         end,
     store_lsi(UserKey, Table, Rest, Item);
 store_lsi(UserKey, Table, [], Item) ->
