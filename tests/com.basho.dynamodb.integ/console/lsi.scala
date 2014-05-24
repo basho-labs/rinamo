@@ -13,7 +13,7 @@ val indexKey = new KeySchema(
   ("Artist", KeyType.HASH),
   ("AlbumTitle", KeyType.RANGE))
 
-val projection = Projection.build_value(ProjectionType.INCLUDE, List("Genre", "Year"))
+val projection = Projection.build_value(ProjectionType.INCLUDE, Some(List("Genre", "Year")))
 
 val secondary_indexes = new LocalSecondaryIndexes (
   ("AlbumTitleIndex", indexKey, projection)
