@@ -12,7 +12,7 @@ execute(Req, Env) ->
     {ok, TaggedReq, Env}.
 
 create_request_id() ->
-    uuid:uuid_to_string(uuid:get_v5_compat(<<"rinamo to rule them all">>)).
+    uuid:uuid_to_string(uuid:get_v5_compat(uuid:get_v1(uuid:new(self(), erlang)))).
 
 
 
@@ -20,7 +20,7 @@ create_request_id() ->
 -include_lib("eunit/include/eunit.hrl").
 
 create_request_id_test() ->
-    ?assert(create_request_id()),
-    ?assert(byte_size(create_request_id()) >= 0).
+    ?assert(is_list(create_request_id())),
+    ?assert(length(create_request_id()) >= 0).
 
 -endif.
