@@ -19,6 +19,9 @@ send(Status, ResponseBody, Req) ->
 -include_lib("eunit/include/eunit.hrl").
 
 make_test() ->
-    ?assert(false).
+    Input = [{<<"Some_Json_Attribute">>, <<"Some Json Value">>}],
+    {ok, Json, Crc32} = make(Input),
+    ?assertEqual(560185682, Crc32),
+    ?assertEqual(<<"{\"Some_Json_Attribute\":\"Some Json Value\"}">>, Json).
 
 -endif.
