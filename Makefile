@@ -3,6 +3,9 @@
 all: deps compile
 	./rebar compile
 
+console:
+	erl -pa ebin/ deps/*/ebin
+
 compile: deps
 	./rebar get-deps
 
