@@ -17,7 +17,7 @@ object RinamoConsole {
      val b = new Boot()
      b.boot
      MainGenericRunner.main(args)
-     exit(0)
+     System.exit(0)
    }
 
    def config():AmazonDynamoDBClient = {

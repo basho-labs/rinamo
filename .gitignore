@@ -5,3 +5,5 @@ ebin
 Berksfile.lock
 .vagrant
 *.box
+.DS_Store
+erln8.config

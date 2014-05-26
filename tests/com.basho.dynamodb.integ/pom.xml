@@ -31,7 +31,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <powermock.version>1.5.4</powermock.version>
-    <scala.version>2.10.3</scala.version>
+    <scala.version>2.11.1</scala.version>
   </properties>
 
   <distributionManagement>
@@ -245,7 +245,7 @@
     <!-- Scala Test -->
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.10</artifactId>
+      <artifactId>scalatest_2.11</artifactId>
       <version>2.2.0-M1</version>
       <scope>test</scope>
       <exclusions>
@@ -267,8 +267,8 @@
     </dependency>
     <dependency>
       <groupId>org.scalacheck</groupId>
-      <artifactId>scalacheck_2.10</artifactId>
-      <version>1.11.2</version>
+      <artifactId>scalacheck_2.11</artifactId>
+      <version>1.11.4</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
