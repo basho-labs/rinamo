@@ -24,11 +24,11 @@ put_item(Table, Item, Expectations, AWSContext) ->
      {gsi, GSI}] = get_table_info(Table, AWSContext),
     _ = case KeySchema of
         [{HashKeyAttribute, hash}] ->
-            [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
+            [{_, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
             store_hash_key(UserKey, Table, HashKeyValue, Item);
         [{HashKeyAttribute, hash}, {RangeKeyAttribute, range}] ->
-            [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
-            [{RangeFieldType, RangeKeyValue}] = kvc:path(RangeKeyAttribute, Item),
+            [{_, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
+            [{_, RangeKeyValue}] = kvc:path(RangeKeyAttribute, Item),
             store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, Item)
     end,
     _ = store_lsi(UserKey, Table, LSI, Item),
@@ -71,10 +71,10 @@ query(Table, IndexName, KeyConditions, AWSContext) ->
     %  - lsi_same_hashkey
     %  - too_many_conditions
     case MappedConditions of
-        [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
-         {remaining, PostFilterConditions}] ->
+        [{hash, {_, [{_, HashKeyValue}], _}},
+         {remaining, _}] ->
              [get_item(Table, HashKeyValue, AWSContext)];
-        [{hash, {HashKeyAttr, [{HashKeyType, HashKeyValue}], HashKeyOperator}},
+        [{hash, {_, [{_, HashKeyValue}], _}},
          {range, {RangeKeyAttr, RangeKeyOperands, RangeKeyOperator}},
          {remaining, PostFilterConditions}] ->
             PartitionNS = case is_binary(IndexName) of
@@ -106,7 +106,7 @@ query(Table, IndexName, KeyConditions, AWSContext) ->
 %% Internal
 
 -spec store_hash_key(binary(), binary(), [binary()], binary()) -> ok.
-store_hash_key(User, Table, [], Item) ->
+store_hash_key(_, _, [], _) ->
     ok;
 store_hash_key(User, Table, [Key|Rest], Item) ->
     store_hash_key(User, Table, Rest, Item),
@@ -125,7 +125,6 @@ store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, 
 
     % ------- begin index concern
 
-    StrategyModule = rinamo_config:get_index_strategy(),
     M = rinamo_config:get_index_strategy(),
     F = store,
     A = [
@@ -134,7 +133,7 @@ store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, 
         RangeKeyValue,
         Item
     ],
-    Result = erlang:apply(M, F, A),
+    _ = erlang:apply(M, F, A),
 
     % ------- end index concern
 
@@ -155,9 +154,9 @@ store_lsi(UserKey, Table, [Index|Rest], Item) ->
             lager:debug("RangeKeyAttribute: ~p~n", [RangeKeyAttribute]),
             lager:debug("Item: ~p~n", [Item]),
             IndexAndRangeAttr = erlang:iolist_to_binary([IndexName, ?RINAMO_SEPARATOR, RangeKeyAttribute]),
-            [{HashFieldType, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
+            [{_, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
             case kvc:path(RangeKeyAttribute, Item) of
-                [{RangeFieldType, RangeKeyValue}] ->
+                [{_, RangeKeyValue}] ->
                     store_range_key(UserKey, Table, IndexAndRangeAttr, HashKeyValue, RangeKeyValue, Item);
                 [] -> ok;
                 _ -> ok
@@ -167,7 +166,7 @@ store_lsi(UserKey, Table, [Index|Rest], Item) ->
             ok
         end,
     store_lsi(UserKey, Table, Rest, Item);
-store_lsi(UserKey, Table, [], Item) ->
+store_lsi(_, _, [], _) ->
     ok.
 
 % table_keyschema is a sorted tuple array.  Callers may pattern match on

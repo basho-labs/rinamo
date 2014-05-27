@@ -32,6 +32,7 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
         PartitionNS, ?RINAMO_SEPARATOR,
         PartitionId, ?RINAMO_SEPARATOR,
         <<"RefList">>]),
+    % TODO: handle notfound case
     {value, RefList} = rinamo_crdt_set:value(rinamo_crdt_set:client(), RB, RK),
 
     lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
@@ -44,7 +45,7 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
     % filter (using KeyConditions) and convert to expected aws output format.
     % in short, this needs to strip the range key (used for ordering) out of
     % each element and just pass back the item attribute list.
-    FilteredList = lists:foldl(fun(S_Item, S_Acc) ->
+    lists:foldl(fun(S_Item, S_Acc) ->
         {_, ItemAttrList} = S_Item,
         case filter_item(ItemAttrList, Conditions) of
             true -> [ItemAttrList | S_Acc];
@@ -52,7 +53,7 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
         end
     end, [], AllItems).
 
-delete(I, Do, Not, Know, Yet) ->
+delete(TBD) ->
     ok.
 
 filter_item(ItemAttrList, KeyConditions) ->
