@@ -153,7 +153,11 @@ decode_put_expected([Field|Rest], Acc) ->
             {E, FT, FV};
         _ -> {undefined, undefined, undefined}
     end,
-    ExpectedAtom = erlang:list_to_atom(string:to_lower(erlang:binary_to_list(ExpectedData))),
+    ExpectedAtom = case is_atom(ExpectedData) of
+        true -> ExpectedData;
+        false ->
+            erlang:list_to_atom(string:to_lower(erlang:binary_to_list(ExpectedData)))
+    end,
     decode_put_expected(Rest, [{FieldName, [{<<"Exists">>, ExpectedAtom}, {FieldType, FieldValue}]} | Acc]).
 
 

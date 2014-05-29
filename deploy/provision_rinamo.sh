@@ -39,7 +39,7 @@ su -c "sed -i.bak 's/listener.http.internal = 127.0.0.1:8098/listener.http.inter
 su -c "sed -i.bak 's/rinamo.network.bind = 127.0.0.1:8000/rinamo.network.bind = 0.0.0.0:8000/' etc/riak.conf" vagrant
 
 # Start Riak
-ulimit -n 32768
+ulimit -n 65536
 su -c "./bin/riak start" vagrant
 su -c "./bin/riak ping" vagrant
 popd

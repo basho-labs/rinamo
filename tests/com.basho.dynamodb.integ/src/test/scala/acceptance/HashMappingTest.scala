@@ -148,25 +148,25 @@ class HashMappingTest extends FunSpec
     describe ("[US193709, US193711]: table type, hash key, LWW behavior") {
       describe ("read data, get item") {
         it ("should read item from table") {
-          val result = Table.get(hash_table_name, "Id", "N", "101")
+          val result = Table.get(hash_table_name, "Id", "101", "N")
           val title_value = result.getItem().get("Title")
           assert("Tale of Two Databases".equals(title_value.getS()))
         }
       }
       describe ("read data, query item") {
         it ("should query exactly one result") {
-          val query_result = Table.query(hash_table_name, "Id", "101")
+          val query_result = Table.range_query(hash_table_name, "Id", "101")
           assert(query_result.getCount() == 1)
           assert("Tale of Two Databases".equals(query_result.getItems().get(0).get("Title").getS()))
         }
         it ("should ignore range key conditions like amazon") {
-          val query_result = Table.query(hash_table_name, "Id", "101",
+          val query_result = Table.range_query(hash_table_name, "Id", "101",
               Some("Title"), Some("EQ"), Some("Because Amazon."))
           assert("Tale of Two Databases".equals(query_result.getItems().get(0).get("Title").getS()))
         }
         it ("should explode if invalid range operator is used") {
           evaluating {
-            val query_result = Table.query(hash_table_name, "Id", "101",
+            val query_result = Table.range_query(hash_table_name, "Id", "101",
                 Some("Title"), Some("FOO_OP"), Some("BAR"))
           } should produce [IllegalArgumentException]
         }
@@ -178,9 +178,9 @@ class HashMappingTest extends FunSpec
     }
     describe ("US193715: modify data, delete item") {
       it ("should delete item from table") {
-        val delete_result = Table.delete(hash_table_name, "Id", "N", "101")
+        val delete_result = Table.delete(hash_table_name, "Id", "101", "N")
         await atMost(5, SECONDS) until {
-          val get_result = Table.get(hash_table_name, "Id", "N", "101")
+          val get_result = Table.get(hash_table_name, "Id", "101", "N")
           get_result.getItem() == null
         }
       }

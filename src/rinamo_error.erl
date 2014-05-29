@@ -119,6 +119,16 @@ make(return_values_invalid) ->
         <<"ValidationException">>,
         <<"Return values set to invalid value">>);
 
+make(lsi_same_hashkey) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"Local Secondary indices must have the same hash key as the main table">>);
+
+make(too_many_conditions) ->
+    build_error(400,
+        <<"ValidationException">>,
+        <<"There are too many conditions in this query">>);
+
 % Basho Specific Errors
 
 make(missing_operation_target) ->

@@ -18,12 +18,10 @@ store(PartitionNS, PartitionId, Value, Item) ->
     RV = Value,
     _ = rinamo_crdt_set:add(rinamo_crdt_set:client(), RB, RK, RV),
 
-    % store Item as a dispersed object in Riak
-    % logic for a get has to consider this may not succeed
-    B = PartitionNS,
-    K = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Value]),
-    V = jsx:encode(Item),
-    _ = rinamo_kv:put(rinamo_kv:client(), B, K, V, "application/json"),
+    SB = PartitionNS,
+    SK = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Value]),
+    SV = {Value, Item},
+    _ = rinamo_crdt_set:add(rinamo_crdt_set:client(), SB, SK, SV),
 
     ok.
 
@@ -34,19 +32,34 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
         PartitionNS, ?RINAMO_SEPARATOR,
         PartitionId, ?RINAMO_SEPARATOR,
         <<"RefList">>]),
-    {value, RefList} = rinamo_crdt_set:value(rinamo_crdt_set:client(), RB, RK),
+    case rinamo_crdt_set:value(rinamo_crdt_set:client(), RB, RK) of
+        {value, RefList} ->
+            lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
+            lager:debug("Conditions: ~p~n", [Conditions]),
 
-    lager:debug("Attr, Operands, Operator: [~p, ~p, ~p]~n", [Attribute, Operands, Operator]),
-    lager:debug("Conditions: ~p~n", [Conditions]),
+            PreFilteredList = pre_filter(Operands, Operator, RefList),
 
-    PreFilteredList = pre_filter(Operands, Operator, RefList),
+            AllItems = fetch_items(PartitionNS, PartitionId, PreFilteredList, []),
 
-    ItemAttrList = fetch_items(PartitionNS, PartitionId, PreFilteredList, []),
+            % filter (using KeyConditions) and convert to expected aws output format.
+            % in short, this needs to strip the range key (used for ordering) out of
+            % each element and just pass back the item attribute list.
+            lists:foldl(fun(S_Item, S_Acc) ->
+                {_, ItemAttrList} = S_Item,
+                case filter_item(ItemAttrList, Conditions) of
+                    true -> [ItemAttrList | S_Acc];
+                    false -> S_Acc
+                end
+            end, [], AllItems);
+        notfound ->
+            []
+    end.
 
-    filter(ItemAttrList, Conditions).
-
-delete(I, Do, Not, Know, Yet) ->
+delete(TBD) ->
     ok.
+
+filter_item(ItemAttrList, KeyConditions) ->
+    length(filter([ItemAttrList], KeyConditions)) > 0.
 
 %% Internal
 pre_filter(Operands, Operator, List) ->
@@ -70,11 +83,11 @@ fetch_items(_, _, [], Acc) ->
     lists:reverse(Acc);
 fetch_items(B, PartitionId, [Ref|Rest], Acc) ->
     K = erlang:iolist_to_binary([PartitionId, ?RINAMO_SEPARATOR, Ref]),
-    case rinamo_kv:get(rinamo_kv:client(), B, K) of
-        {value, JSON} ->
-            Item = jsx:decode(JSON),
-            fetch_items(B, PartitionId, Rest, [Item | Acc]);
-        {error, notfound} ->
+    case rinamo_crdt_set:value(rinamo_crdt_set:client(), B, K) of
+        {value, Items} ->
+            NewAcc = lists:flatten([Items | Acc]),
+            fetch_items(B, PartitionId, Rest, NewAcc);
+        notfound ->
             % either we are partitioned, or the index is dirty
             % (we can't tell which)
             fetch_items(B, PartitionId, Rest, Acc);

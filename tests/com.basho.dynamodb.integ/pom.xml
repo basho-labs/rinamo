@@ -27,11 +27,11 @@
   </scm>
 
   <properties>
-    <aws.sdk.version>1.7.1</aws.sdk.version>
+    <aws.sdk.version>1.7.11</aws.sdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <powermock.version>1.5</powermock.version>
-    <scala.version>2.10.3</scala.version>
+    <powermock.version>1.5.4</powermock.version>
+    <scala.version>2.11.1</scala.version>
   </properties>
 
   <distributionManagement>
@@ -57,7 +57,7 @@
         <dependency>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-nop</artifactId>
-          <version>1.7.5</version>
+          <version>1.7.7</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -68,7 +68,7 @@
         <dependency>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-simple</artifactId>
-          <version>1.7.5</version>
+          <version>1.7.7</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -80,7 +80,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.16</version>
+            <version>2.17</version>
             <executions>
               <execution>
                 <goals>
@@ -145,16 +145,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.16</version>
+        <version>2.17</version>
         <configuration>
           <!--
           <skipTests>true</skipTests>
           -->
-          <systemPropertyVariables>
-            <org.slf4j.simpleLogger.defaultLogLevel>debug</org.slf4j.simpleLogger.defaultLogLevel>
-            <org.slf4j.simpleLogger.showDateTime>true</org.slf4j.simpleLogger.showDateTime>
-            <org.slf4j.simpleLogger.dateTimeFormat>yyyy-MM-dd HH:mm:ss</org.slf4j.simpleLogger.dateTimeFormat>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
       <!-- Run Scala Test from CLI -->
@@ -171,6 +166,11 @@
             <jvmArg>-Xms64m</jvmArg>
             <jvmArg>-Xmx128m</jvmArg>
           </jvmArgs>
+          <systemPropertyVariables>
+            <org.slf4j.simpleLogger.defaultLogLevel>debug</org.slf4j.simpleLogger.defaultLogLevel>
+            <org.slf4j.simpleLogger.showDateTime>true</org.slf4j.simpleLogger.showDateTime>
+            <org.slf4j.simpleLogger.dateTimeFormat>yyyy-MM-dd HH:mm:ss</org.slf4j.simpleLogger.dateTimeFormat>
+          </systemPropertyVariables>
         </configuration>
         <executions>
           <execution>
@@ -184,7 +184,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.6.3.201306030806</version>
+        <version>0.7.1.201405082137</version>
         <executions>
           <execution>
             <id>jacoco-initialize</id>
@@ -214,7 +214,7 @@
     <dependency>
       <groupId>com.jayway.awaitility</groupId>
       <artifactId>awaitility-scala</artifactId>
-      <version>1.3.5</version>
+      <version>1.6.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -245,10 +245,9 @@
     <!-- Scala Test -->
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.10</artifactId>
-      <version>2.0.1-SNAP4</version>
+      <artifactId>scalatest_2.11</artifactId>
+      <version>2.2.0-M1</version>
       <scope>test</scope>
-      <!-- scalatest polutes the classpath some -->
       <exclusions>
         <exclusion>
           <groupId>org.scala-lang</groupId>
@@ -268,8 +267,8 @@
     </dependency>
     <dependency>
       <groupId>org.scalacheck</groupId>
-      <artifactId>scalacheck_2.10</artifactId>
-      <version>1.11.1</version>
+      <artifactId>scalacheck_2.11</artifactId>
+      <version>1.11.4</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

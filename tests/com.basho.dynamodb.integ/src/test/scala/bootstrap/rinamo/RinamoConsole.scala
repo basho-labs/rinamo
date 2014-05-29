@@ -10,13 +10,14 @@ import com.amazonaws.services.dynamodbv2.model._
 import java.util.Properties
 
 import com.basho.dynamodb.integ.DynamoDBTest
+import com.basho.dynamodb.integ.ConsoleRedirector
 
 object RinamoConsole {
    def main(args : Array[String]) {
      val b = new Boot()
      b.boot
      MainGenericRunner.main(args)
-     exit(0)
+     System.exit(0)
    }
 
    def config():AmazonDynamoDBClient = {
@@ -43,6 +44,13 @@ object RinamoConsole {
      if (host != null && host.length() > 0) {
        client.setEndpoint(protocol + "://" + host + ":" + port)
      }
+
+     // Control Output
+     val cout = new ConsoleRedirector("trace")
+     val cerr = new ConsoleRedirector("error")
+     System.setOut(cout); System.setErr(cerr)
+     Console.setOut(cout); Console.setErr(cerr)
+     
      return client
    }
 }

@@ -20,21 +20,14 @@ execute(Req, Env) ->
                     {halt, NextReq}
             end;
         _ ->
-            case cowboy_req:method(Req) of
-                {<<"POST">>, _} ->
-                    AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
-
-                    {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
-                    lager:debug("Auth HandlerOpts: ~p~n", [HandlerOpts]),
-                    State = case HandlerOpts of
-                        [] -> #state{user_key = AccessKey};
-                        _ -> HandlerOpts#state{user_key = AccessKey}
-                    end,
-
-                    NewEnv = [{handler_opts, State} | PartialEnv],
-
-                    {ok, Req, NewEnv};
+            {Method, _} = cowboy_req:method(Req),
+            case Method of
+                <<"POST">> ->
+                    execute_auth_handler(AuthToken, Req, Env);
                 _ ->
+                    % observed that sometimes AWS java client sends <<>> or <<"T">>
+                    % may be related to:  https://github.com/extend/cowboy/issues/448
+                    lager:warning("Invalid Method: ~p~n", [Method]),
                     ErrorMsg = rinamo_error:make(incomplete_signature),
                     {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
                     {halt, NextReq}
@@ -42,6 +35,21 @@ execute(Req, Env) ->
     end.
 
 %% Internal
+execute_auth_handler(AuthToken, Req, Env) ->
+    AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
+
+    {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
+    lager:debug("Auth HandlerOpts: ~p~n", [HandlerOpts]),
+    State = case HandlerOpts of
+        [] -> #state{user_key = AccessKey};
+        _ -> HandlerOpts#state{user_key = AccessKey}
+    end,
+
+    NewEnv = [{handler_opts, State} | PartialEnv],
+
+    {ok, Req, NewEnv}.
+
+
 tokenize_auth_header(HeaderValue) ->
     case HeaderValue of
       undefined -> undefined;

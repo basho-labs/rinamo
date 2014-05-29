@@ -99,7 +99,7 @@ object Table {
 
   def get(
       table_name:String,
-      _key:String, _type:String, _value:String): GetItemResult = {
+      _key:String, _value:String, _type:String): GetItemResult = {
 
     val (_, value) = Item.build_value(_key, _type, _value)
     val request = new GetItemRequest().addKeyEntry(_key, value)
@@ -108,10 +108,9 @@ object Table {
   }
 
   def delete(table_name:String,
-             _hash_key:String, _hash_type:String, _hash_value:String,
-             _range_key:Option[String] = None,
-             _range_type:Option[String] = Some("N"),
-             _range_value:Option[String] = None): DeleteItemResult = {
+             _hash_key:String, _hash_value:String, _hash_type:String,
+             _range_key:Option[String] = None, _range_value:Option[String] = None,
+             _range_type:Option[String] = Some("N")): DeleteItemResult = {
     val (_, h_value) = Item.build_value(_hash_key, _hash_type, _hash_value)
     val request = new DeleteItemRequest().addKeyEntry(_hash_key, h_value)
     _range_key match {
@@ -126,57 +125,40 @@ object Table {
     return client.deleteItem(request)
   }
 
-  /* If using only the hash key, this is equivalent to get, but returns a count */
-  /* this has a few problems:
-   *   - uses specific attribute types (withN, withS)
-   *   - assumes range key, does not work with LSI and GSI
+  /*
+   * Range Query Convenience Function
+   * Assumes the hash key is a number, range key is a string.
+   * Use 'query' if you want full control over this.
    */
-  def query(table_name:String,
-      hash_key:String, hash_value:String,
-      range_key:Option[String] = None,
-      operator:Option[String] = Some(ComparisonOperator.EQ.toString()),
-      range_value:Option[String] = None,
+  def range_query(table_name:String, 
+      hash_key:String, hash_value:String, 
+      range_key:Option[String] = None, 
+      operator:Option[String] = Some(ComparisonOperator.EQ.toString()), 
+      range_value:Option[String] = None, 
       between_value:Option[String] = None): QueryResult = {
-    val request = new QueryRequest()
-
-    val hash_condition = new Condition()
-      .withComparisonOperator(ComparisonOperator.EQ.toString())
-      .withAttributeValueList(new AttributeValue().withN(hash_value))
-
-    var key_conditions:Map[String, Condition] = Map()
-    key_conditions += ((hash_key, hash_condition))
-
+    val key_conditions = new KeyConditions
+    key_conditions.add(hash_key, "N", "EQ", hash_value)
     range_key match {
       case Some(range_key) => {
-        val (range_condition) = between_value match {
-            case Some(between_value) => {
-              // between adds an additional operand to use in the range comparison
-              val attr_val_list = List(
-                  new AttributeValue().withS(range_value.get),
-                  new AttributeValue().withS(between_value))
-              new Condition()
-              .withComparisonOperator(ComparisonOperator.fromValue(operator.get))
-              .withAttributeValueList(attr_val_list)
-            }
-            case None => {
-              new Condition()
-              .withComparisonOperator(ComparisonOperator.fromValue(operator.get))
-              .withAttributeValueList(new AttributeValue().withS(range_value.get))
-            }
-        }
-        key_conditions += ((range_key, range_condition))
-        /*
-        key_conditions += (("ISBN", new Condition()
-            .withComparisonOperator("EQ")
-            .withAttributeValueList(new AttributeValue().withS("ABC"))))
-        */
+        key_conditions.add(range_key, "S", operator.get, range_value.get, between_value)
       }
       case None => {}
     }
+    return query(table_name, key_conditions)
+  }
 
-    request.setKeyConditions(key_conditions)
+  def query(
+      table_name:String, key_conditions:KeyConditions,
+      index_name:Option[String] = None): QueryResult = {
+    val request = new QueryRequest()
     request.setTableName(table_name)
-
+    request.setKeyConditions(key_conditions.asMap)
+    index_name match {
+      case Some(index_name) => { request.setIndexName(index_name) }
+      case None => {}
+    }
+    // request.setAttributesToGet(attributesToGet)
+    // request.setConsistentRead(consistentRead)
     return client.query(request)
   }
 
