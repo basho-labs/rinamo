@@ -32,6 +32,7 @@ put_item(Table, Item, Expectations, AWSContext) ->
             store_range_key(UserKey, Table, RangeKeyAttribute, HashKeyValue, RangeKeyValue, Item)
     end,
     _ = store_lsi(UserKey, Table, LSI, Item),
+    _ = store_gsi(UserKey, Table, GSI, Item),
 
     ok.
 
@@ -66,7 +67,7 @@ delete_item(Table, Key, AWSContext) ->
 query(Table, IndexName, KeyConditions, AWSContext) ->
     UserKey = AWSContext#state.user_key,
 
-    MappedConditions = map_key_conditions(Table, KeyConditions, AWSContext),
+    MappedConditions = map_key_conditions(Table, IndexName, KeyConditions, AWSContext),
     % TODO: Validation
     %  - lsi_same_hashkey
     %  - too_many_conditions
@@ -144,15 +145,35 @@ store_lsi(UserKey, Table, [Index|Rest], Item) ->
      {<<"KeySchema">>, IKeySchema},
      {<<"Projection">>, _}] = Index,
 
-    % TODO: do something more interesting with Projection
-    % NonKeyAttributes may be missing
-    %[{<<"ProjectionType">>, ProjectionType},
-    % {<<"NonKeyAttributes">>, NonKeyAttributes}] = Projection
+    write_index_value(UserKey, Table, IndexName, IKeySchema, Item),
+    store_lsi(UserKey, Table, Rest, Item);
+store_lsi(_, _, [], _) ->
+    ok.
+
+store_gsi(UserKey, Table, [Index|Rest], Item) ->
+    [{<<"IndexName">>, IndexName},
+     {<<"KeySchema">>, IKeySchema},
+     {<<"Projection">>, _},
+     {<<"ProvisionedThroughput">>, _}] = Index,
+
+    write_index_value(UserKey, Table, IndexName, IKeySchema, Item),
+    store_gsi(UserKey, Table, Rest, Item);
+store_gsi(_, _, [], _) ->
+    ok.
+
+
+% TODO: do something more interesting with Projection
+%   - NonKeyAttributes are optional
+%[{<<"ProjectionType">>, ProjectionType},
+% {<<"NonKeyAttributes">>, NonKeyAttributes}] = Projection
+write_index_value(UserKey, Table, IndexName, IKeySchema, Item) ->
     KeySchema = map_key_types(IKeySchema, []),
     _ = case KeySchema of
+        [{HashKeyAttribute, hash}] ->
+            % TODO: handle this direct hash key case, workaround for not
+            % having actual columns in Riak
+            ok;
         [{HashKeyAttribute, hash}, {RangeKeyAttribute, range}] ->
-            lager:debug("RangeKeyAttribute: ~p~n", [RangeKeyAttribute]),
-            lager:debug("Item: ~p~n", [Item]),
             IndexAndRangeAttr = erlang:iolist_to_binary([IndexName, ?RINAMO_SEPARATOR, RangeKeyAttribute]),
             [{_, HashKeyValue}] = kvc:path(HashKeyAttribute, Item),
             case kvc:path(RangeKeyAttribute, Item) of
@@ -164,10 +185,8 @@ store_lsi(UserKey, Table, [Index|Rest], Item) ->
         _ ->
             % error?
             ok
-        end,
-    store_lsi(UserKey, Table, Rest, Item);
-store_lsi(_, _, [], _) ->
-    ok.
+        end.
+
 
 % table_keyschema is a sorted tuple array.  Callers may pattern match on
 % [{hash, HashAttr}] or [{hash, HashAttr}, {range, RangeAttr}]
@@ -193,22 +212,28 @@ map_key_types([Attribute|Rest], Acc) ->
     KeyTypeAtom = erlang:list_to_atom(string:to_lower(erlang:binary_to_list(KeyType))),
     map_key_types(Rest, [{AttributeName, KeyTypeAtom} | Acc]);
 map_key_types([], Acc) ->
-    % sort final list on key type, (make hash come before range)
+    % sort; (make hash come before range)
     lists:keysort(2, Acc).
 
 % Determines which key conditions are hash or range based, and which are not.
 % Returns a list of condition tuples where each tuple indicates if the
 % condition is (by atom) hash|range|remaining.
-map_key_conditions(Table, KeyConditions, AWSContext) when is_binary(Table) ->
-    [{table_keyschema, KeySchema},
+map_key_conditions(Table, IndexName, KeyConditions, AWSContext) when is_binary(Table) ->
+    [{table_keyschema, TableSchema},
      {lsi, LSI},
      {gsi, GSI}] = get_table_info(Table, AWSContext),
     % include LSI / GSI in the condition mapping
-    MergedSchema = lists:flatten(
-      KeySchema ++ collect_key_schema(LSI, []) ++ collect_key_schema(GSI, [])),
-    map_key_conditions(MergedSchema, KeyConditions, []);
-map_key_conditions([], LeftoverConditions, Acc) ->
-    lists:keysort(1, [{remaining, LeftoverConditions} | Acc]);
+    % LSI we can combine with Table, since they share Hash Keys
+    % GSI we have to separate.
+    % Key Conditions may map against only one or the other.
+    PrimaryKeySchema = TableSchema ++ collect_key_schema(LSI, []),
+    GlobalKeySchema = collect_key_schema(lists:filter(
+        fun(GS_Index) -> kvc:path(<<"IndexName">>, GS_Index) == IndexName
+    end, GSI), []),
+    case GlobalKeySchema of
+        [] -> map_key_conditions(PrimaryKeySchema, KeyConditions, []);
+        _ -> map_key_conditions(GlobalKeySchema, KeyConditions, [])
+    end.
 map_key_conditions([KeyPart|Rest], KeyConditions, Acc) ->
     {KeyAttr, KeyType} = KeyPart,
     case lists:keytake(KeyAttr, 1, KeyConditions) of
@@ -217,13 +242,15 @@ map_key_conditions([KeyPart|Rest], KeyConditions, Acc) ->
         false ->
             % key schema not in the conditions (error)
             map_key_conditions(Rest, KeyConditions, Acc)
-    end.
+    end;
+map_key_conditions([], LeftoverConditions, Acc) ->
+    lists:keysort(1, [{remaining, LeftoverConditions} | Acc]).
 
 collect_key_schema([Index|Rest], Acc) ->
     KeySchema = map_key_types(kvc:path("KeySchema", Index), []),
     collect_key_schema(Rest, [KeySchema | Acc]);
 collect_key_schema([], Acc) ->
-    lists:reverse(Acc).
+    lists:flatten(lists:reverse(Acc)).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -255,7 +282,9 @@ put_item_test() ->
     meck:unload([rinamo_tables, rinamo_kv]).
 
 get_item_test() ->
+    TableFixture = jsx:decode(hash_table_fixture()),
     meck:new(rinamo_kv, [non_strict]),
+    meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(hash_table_fixture())),
     meck:expect(rinamo_kv, client, 0, ok),
     meck:expect(rinamo_kv, get, 3, {value, <<"[\"Some_Item_Def_JSON_Here\"]">>}),
 
@@ -267,10 +296,11 @@ get_item_test() ->
     Expected = [<<"Some_Item_Def_JSON_Here">>],
     ?assertEqual(Expected, Actual),
 
-    meck:unload(rinamo_kv).
+    meck:unload([rinamo_tables, rinamo_kv]).
 
 delete_item_test() ->
     meck:new(rinamo_kv, [non_strict]),
+    meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(hash_table_fixture())),
     meck:expect(rinamo_kv, client, 0, ok),
     meck:expect(rinamo_kv, delete, 3, {value, <<"[\"Some_Item_Def_JSON_Here\"]">>}),
 
@@ -284,14 +314,15 @@ delete_item_test() ->
     Expected = ok,
     ?assertEqual(Expected, Actual),
 
-    meck:unload(rinamo_kv).
+    meck:unload([rinamo_tables, rinamo_kv]).
 
-map_key_condition_test() ->
+map_key_condition_range_test() ->
     meck:new([rinamo_tables, rinamo_kv], [non_strict]),
     meck:expect(rinamo_tables, load_table_def, 2, jsx:decode(range_table_fixture())),
     meck:expect(rinamo_kv, client, 0, ok),
 
     Table = <<"TableName">>,
+    IndexName = [],
     KeyConditions = [
         {<<"Title">>,[{<<"S">>,<<"Some Title">>}],<<"EQ">>},
         {<<"ISBN">>, [{<<"N">>,<<"9876">>}],<<"GT">>},
@@ -299,7 +330,7 @@ map_key_condition_test() ->
         {<<"AnotherCondition">>, [{<<"S">>,<<"XYZ">>}],<<"LT">>}],
     AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
 
-    Actual = map_key_conditions(Table, KeyConditions, AWSContext),
+    Actual = map_key_conditions(Table, IndexName, KeyConditions, AWSContext),
 
     Expected = [
      {hash,{<<"Id">>,[{<<"N">>,<<"101">>}],<<"EQ">>}},

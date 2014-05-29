@@ -49,16 +49,29 @@ object Table {
       table_name:String,
       key_schema:KeySchema,
       attributes:Attributes,
-      secondary_indexes:LocalSecondaryIndexes,
+      lsi_secondary_indexes:Option[LocalSecondaryIndexes],
+      gsi_secondary_indexes:Option[GlobalSecondaryIndexes],
       provisioned_throughput:ProvisionedThroughput): CreateTableResult = {
 
     val request = new com.amazonaws.services.dynamodbv2.model.CreateTableRequest().
       withTableName(table_name).
-      withKeySchema(key_schema.asCollection()).
-      withAttributeDefinitions(attributes.asCollection()).
-      withLocalSecondaryIndexes(secondary_indexes.asCollection()).
+      withKeySchema(key_schema.asCollection).
+      withAttributeDefinitions(attributes.asCollection).
       withProvisionedThroughput(provisioned_throughput)
 
+    lsi_secondary_indexes match {
+      case Some(lsi_secondary_indexes) => {
+        request.setLocalSecondaryIndexes(lsi_secondary_indexes.asCollection)
+      }
+      case None => {}
+    }
+    gsi_secondary_indexes match {
+      case Some(gsi_secondary_indexes) => {
+        request.setGlobalSecondaryIndexes(gsi_secondary_indexes.asCollection)
+      }
+      case None => {}
+    }
+      
     return client.createTable(request)
   }
 

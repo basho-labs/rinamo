@@ -43,7 +43,7 @@ class LSIMappingTest extends FunSpec
   val orderCreationIndexProjection = Projection.build_value(ProjectionType.INCLUDE, Some(List("ProductCategory", "ProductName")))
   val isOpenIndexProjection = Projection.build_value(ProjectionType.ALL, None)
 
-  val secondary_indexes = new LocalSecondaryIndexes (
+  val lsi_secondary_indexes = new LocalSecondaryIndexes (
     ("OrderCreationDateIndex", orderCreationIndexKey, orderCreationIndexProjection),
     ("IsOpenIndex", isOpenIndexKey, isOpenIndexProjection))
 
@@ -140,42 +140,48 @@ class LSIMappingTest extends FunSpec
     ("ShipmentTrackingId", "S", "383283"))
 
   describe ("[US247961]: table type, lsi, LWW behavior") {
-    val lsi_table_name = "test_table_lsi"
+    val table_name = "test_table_lsi"
     it ("should create lsi table") {
       logger.info("Creating Table ...")
-      val table_lsi:CreateTableResult = Table.create(lsi_table_name, tableKey, table_attributes, secondary_indexes, provisioned_throughput)
+      val table_lsi:CreateTableResult = Table.create(
+          table_name, tableKey, table_attributes,
+          Some(lsi_secondary_indexes), None, provisioned_throughput)
       await atMost(2, MINUTES) until { tableLoaded }
     }
     def tableLoaded(): Boolean = {
       try {
-        val result = Table.describe(lsi_table_name)
-        lsi_table_name.equals(result.getTable().getTableName())
+        val result = Table.describe(table_name)
+        table_name.equals(result.getTable().getTableName())
       }
       catch {
         case e: Throwable => false;
       }
     }
     describe ("lsi operations") {
-      it ("should add and query items with conditions") {
-        Table.put(lsi_table_name)(item_1, item_2, item_3, item_4, item_5,
+      it ("should add data and build table indicies") {
+        Table.put(table_name)(item_1, item_2, item_3, item_4, item_5,
                                   item_6, item_7, item_8, item_9, item_10)
-
+      }
+      
+      it ("should query bob's open orders") {
         val key_conditions_1 = new KeyConditions(
           ("CustomerId", "S", "EQ", "bob@example.com", None),
           ("IsOpen", "N", "EQ", "1", None))
-        val results_1 = Table.query(lsi_table_name, key_conditions_1, Some("IsOpenIndex"))
+        val results_1 = Table.query(table_name, key_conditions_1, Some("IsOpenIndex"))
         assert(1 == results_1.getCount())
-
+      }
+      
+      it ("should query bob's orders created after a specific date time") {
         val key_conditions_2 = new KeyConditions(
           ("CustomerId", "S", "EQ", "bob@example.com", None),
           ("OrderCreationDate", "N", "GT", "20130131", None))
-        val results_2 = Table.query(lsi_table_name, key_conditions_2, Some("OrderCreationDateIndex"))
+        val results_2 = Table.query(table_name, key_conditions_2, Some("OrderCreationDateIndex"))
         assert(5 == results_2.getCount())
       }
     }
     it ("should delete lsi table") {
       try {
-        Table.delete(lsi_table_name)
+        Table.delete(table_name)
       }
       catch {
         case e: ResourceNotFoundException => {}
@@ -183,7 +189,7 @@ class LSIMappingTest extends FunSpec
       await atMost(2, MINUTES) until {
         var exception:Throwable = null
         try {
-          Table.describe(lsi_table_name)
+          Table.describe(table_name)
         }
         catch {
           case e: Throwable => {

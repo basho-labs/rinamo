@@ -125,6 +125,45 @@ class LocalSecondaryIndexes(
   }
 }
 
+class GlobalSecondaryIndexes(
+    indexes:(
+      String,
+      KeySchema,
+      com.amazonaws.services.dynamodbv2.model.Projection,
+      com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput)*) {
+  var list: List[com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex] = List()
+  for (index <- indexes) {
+    index match {
+      case (_index_name, _key_schema, _projection, _provisioned_throughput) =>
+        add(_index_name, _key_schema, _projection, _provisioned_throughput)
+      case _ => None
+    }
+  }
+
+  def add(
+      _index_name:String, _key_schema:KeySchema,
+      _projection:com.amazonaws.services.dynamodbv2.model.Projection,
+      _provisioned_throughput:com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput) {
+
+    list :::=  List(new com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex()
+      .withIndexName(_index_name).withKeySchema(_key_schema.asCollection)
+      .withProjection(_projection)
+      .withProvisionedThroughput(_provisioned_throughput))
+  }
+
+  override def toString: String = {
+    list.toString
+  }
+
+  def asList(): List[com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex] = {
+    return list
+  }
+
+  def asCollection(): java.util.Collection[com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex] = {
+    return asJavaCollection(list)
+  }
+}
+
 object Condition {
   def build_value(_operator:String, _attr_val_type:String, _attr_val:String,
       between_value:Option[String] = None): com.amazonaws.services.dynamodbv2.model.Condition = {
