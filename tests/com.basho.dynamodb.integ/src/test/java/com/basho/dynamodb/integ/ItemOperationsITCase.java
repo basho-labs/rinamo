@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
@@ -30,7 +29,7 @@ public class ItemOperationsITCase extends DynamoDBTest {
     tableName = "ItemOpsTestTable";
 
     String hashKeyName = "Id";
-    CreateTableResult result = client.createTable(
+    client.createTable(
       createHashKeyNTable(tableName, hashKeyName, 10L, 5L));
     await().atMost(5, SECONDS).until(tableExists(tableName));
     await().atMost(5, SECONDS).until(tableInList(tableName));

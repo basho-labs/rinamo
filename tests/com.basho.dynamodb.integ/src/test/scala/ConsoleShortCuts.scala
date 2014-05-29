@@ -44,6 +44,16 @@ class LocalSecondaryIndexes(indexes:(String, KeySchema, com.amazonaws.services.d
   }
 }
 
+class GlobalSecondaryIndexes(indexes:(String, KeySchema, com.amazonaws.services.dynamodbv2.model.Projection, com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput)*) extends acceptance.GlobalSecondaryIndexes {
+  for (index <- indexes) {
+    index match {
+      case (_index_name, _key_schema, _projection, _provisioned_throughput) =>
+        add(_index_name, _key_schema, _projection, _provisioned_throughput)
+      case _ => None
+    }
+  }
+}
+
 object Condition {
   implicit def alias(condition:Condition.type) = acceptance.Condition
 }
