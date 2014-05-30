@@ -2,10 +2,7 @@
 
 The following DynamoDB operations could use more work:
 
-* Query
 * Scan
-* LocalSecondaryIndexes
-* GlobalSecondaryIndexes
 * Batch Get
 * Batch Put
 
