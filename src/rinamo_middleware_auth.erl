@@ -14,6 +14,7 @@ execute(Req, Env) ->
         undefined ->
             case cowboy_req:path(Req) of
                 {<<"/ping">>, _} -> {ok, Req, Env};
+                {<<"/ws">>, _} -> {ok, Req, Env};
                 _ ->
                     ErrorMsg = rinamo_error:make(missing_authentication_token),
                     {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),

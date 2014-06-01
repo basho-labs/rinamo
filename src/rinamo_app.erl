@@ -55,8 +55,9 @@ start_cowboy() ->
 
 get_routes() ->
     [{'_', [
+        {<<"/">>, rinamo_handler_root, []},
         {<<"/ping">>, rinamo_handler_ping, []},
-        {<<"/">>, rinamo_handler_root, []}
+        {<<"/ws">>, rinamo_handler_ws, []}
     ]}].
 
 configure_riak() ->
