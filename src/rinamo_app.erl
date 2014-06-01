@@ -31,7 +31,8 @@ stop(_State) ->
 start_cowboy() ->
     CowboyStartFun = case rinamo_config:get_protocol() of
         http -> fun cowboy:start_http/4;
-        https -> fun cowboy:start_https/4
+        https -> fun cowboy:start_https/4;
+        spdy -> fun cowboy:start_spdy/4
     end,
 
     {RawIp, Port} = rinamo_config:get_bind_address(),

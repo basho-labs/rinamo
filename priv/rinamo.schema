@@ -20,8 +20,8 @@
 %% @doc rinamo.protocol tells Rinamo whether to use HTTP or HTTPS when listening for connections.
 %% @datatype enum http, https
 {mapping, "rinamo.network.protocol", "rinamo.network.protocol", [
-  {default, http},
-  {datatype, {enum, [http, https]}}
+  {default, spdy},
+  {datatype, {enum, [http, https, spdy]}}
 ]}.
 
 %% Rinamo API listener bind IP and Port
