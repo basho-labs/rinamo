@@ -29,18 +29,27 @@ stop(_State) ->
 %% ===================================================================
 
 start_cowboy() ->
-    CowboyStartFun = case rinamo_config:get_protocol() of
-        http -> fun cowboy:start_http/4;
-        https -> fun cowboy:start_https/4
+    {CowboyStartFun, ProtocolOpts} = case rinamo_config:get_protocol() of
+        http -> {fun cowboy:start_http/4, none};
+        https -> {fun cowboy:start_https/4,
+            [{cacertfile, rinamo_config:get_ssl_cacertfile()},
+             {certfile, rinamo_config:get_ssl_certfile()},
+             {keyfile, rinamo_config:get_ssl_keyfile()}]};
+        spdy -> {fun cowboy:start_spdy/4, none}
     end,
 
     {RawIp, Port} = rinamo_config:get_bind_address(),
     {ok, Ip} = inet_parse:address(RawIp),
+    TcpOptions = [{ip, Ip}, {port, Port}],
+    CowboyOptions = case ProtocolOpts of
+        none -> TcpOptions;
+        _ -> TcpOptions ++ ProtocolOpts
+    end,
     NumAcceptors = rinamo_config:get_num_acceptors(),
     Dispatch = cowboy_router:compile(get_routes()),
 
     CowboyStartFun(rinamo_listener, NumAcceptors,
-        [{ip, Ip}, {port, Port}],
+        CowboyOptions,
         [
             {env, [{dispatch, Dispatch}]},
             {middlewares, [
@@ -55,8 +64,9 @@ start_cowboy() ->
 
 get_routes() ->
     [{'_', [
+        {<<"/">>, rinamo_handler_root, []},
         {<<"/ping">>, rinamo_handler_ping, []},
-        {<<"/">>, rinamo_handler_root, []}
+        {<<"/ws">>, rinamo_handler_ws, []}
     ]}].
 
 configure_riak() ->
