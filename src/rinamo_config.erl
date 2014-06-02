@@ -34,6 +34,7 @@ get_ssl_keyfile() ->
 
 get_index_strategy() ->
     proplists:get_value(strategy, get_env(index)).
+
 %% Internal
 get_env(Key) ->
     {_, Value} = application:get_env(rinamo, Key),
