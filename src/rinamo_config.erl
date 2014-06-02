@@ -5,6 +5,9 @@
     get_protocol/0,
     get_bind_address/0,
     get_num_acceptors/0,
+    get_ssl_cacertfile/0,
+    get_ssl_certfile/0,
+    get_ssl_keyfile/0,
     get_index_strategy/0
 ]).
 
