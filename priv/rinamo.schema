@@ -17,10 +17,10 @@
   end}.
 
 %% Rinamo API listener protocol
-%% @doc rinamo.protocol tells Rinamo whether to use HTTP or HTTPS when listening for connections.
-%% @datatype enum http, https
+%% @doc rinamo.protocol tells Rinamo to use HTTP, HTTPS or SPDY when listening for connections.
+%% @datatype enum http, https, spdy
 {mapping, "rinamo.network.protocol", "rinamo.network.protocol", [
-  {default, spdy},
+  {default, http},
   {datatype, {enum, [http, https, spdy]}}
 ]}.
 
@@ -39,6 +39,30 @@
   {default, 100},
   {datatype, integer},
   {validators, ["greater_than_zero"]}
+]}.
+
+%% Rinamo SSL CA Cert File
+%% @doc rinamo.ssl.cacertfile path to the CA cert file
+%% @datatype file
+{mapping, "rinamo.ssl.cacertfile", "rinamo.ssl.cacertfile", [
+  {datatype, file},
+  {commented, "$(platform_etc_dir)/rinamo_cacert.pem"}
+]}.
+
+%% Rinamo SSL Cert File
+%% @doc rinamo.ssl.certfile path to the Server cert file
+%% @datatype file
+{mapping, "rinamo.ssl.certfile", "rinamo.ssl.certfile", [
+  {datatype, file},
+  {commented, "$(platform_etc_dir)/rinamo_cert.pem"}
+]}.
+
+%% Rinamo SSL Key File
+%% @doc rinamo.ssl.keyfile path to the Server key file
+%% @datatype file
+{mapping, "rinamo.ssl.keyfile", "rinamo.ssl.keyfile", [
+  {datatype, file},
+  {commented, "$(platform_etc_dir)/rinamo_key.pem"}
 ]}.
 
 %% Rinamo Indexing Strategy

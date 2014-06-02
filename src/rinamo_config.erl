@@ -20,9 +20,17 @@ get_bind_address() ->
 get_num_acceptors() ->
     proplists:get_value(acceptors, get_env(network)).
 
+get_ssl_cacertfile() ->
+    proplists:get_value(cacertfile, get_env(ssl)).
+
+get_ssl_certfile() ->
+    proplists:get_value(certfile, get_env(ssl)).
+
+get_ssl_keyfile() ->
+    proplists:get_value(keyfile, get_env(ssl)).
+
 get_index_strategy() ->
     proplists:get_value(strategy, get_env(index)).
-
 %% Internal
 get_env(Key) ->
     {_, Value} = application:get_env(rinamo, Key),
