@@ -37,10 +37,12 @@ execute(Req, Env) ->
 
 %% Internal
 execute_auth_handler(AuthToken, Req, Env) ->
-    AccessKey = tokenize_auth_header(binary_to_list(AuthToken)),
+    {AccessKey, Signature} = tokenize_auth_header(binary_to_list(AuthToken)),
+    lager:debug("AccessKey: ~p~n", [AccessKey]),
+    lager:debug("Signature: ~p~n", [Signature]),
 
+    % TODO: alter codepath for auth strategy, assign data owner
     {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
-    lager:debug("Auth HandlerOpts: ~p~n", [HandlerOpts]),
     State = case HandlerOpts of
         [] -> #state{user_key = AccessKey};
         _ -> HandlerOpts#state{user_key = AccessKey}
@@ -55,13 +57,14 @@ tokenize_auth_header(HeaderValue) ->
     case HeaderValue of
       undefined -> undefined;
       _ ->
-        [_, Credentials, _, _] = string:tokens(HeaderValue, " "),
-        StartCharPos = string:str(Credentials, "="),
+        [_, Credentials, _, SignatureVal] = string:tokens(HeaderValue, " "),
+        AK_StartCharPos = string:str(Credentials, "="),
         EndCharPos = string:str(Credentials, "/"),
-        UserKey = string:substr(Credentials, StartCharPos + 1, EndCharPos - (StartCharPos + 1)),
-        list_to_binary(UserKey)
+        AccessKey = string:substr(Credentials, AK_StartCharPos + 1, EndCharPos - (AK_StartCharPos + 1)),
+        Sig_StartCharPos = string:str(SignatureVal, "="),
+        Signature = re:replace(string:substr(SignatureVal, Sig_StartCharPos + 1), "\\s+$", "", [global,{return,list}]),
+        {list_to_binary(AccessKey), list_to_binary(Signature)}
     end.
-
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -73,7 +76,10 @@ auth_fixture() ->
 tokenize_auth_header_test() ->
     Input = auth_fixture(),
     Actual = tokenize_auth_header(Input),
-    Expected = <<"RANDY_ACCESS_KEY">>,
+    Expected = {
+        <<"RANDY_ACCESS_KEY">>,
+        <<"81f71d83f35b3b2be9589f9ec0f5edca95b14d602f639b183e729d1fd1e3308c">>
+    },
     ?assertEqual(Expected, Actual),
     ?assertEqual(undefined, tokenize_auth_header(undefined)).
 

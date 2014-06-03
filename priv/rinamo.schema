@@ -17,7 +17,7 @@
   end}.
 
 %% Rinamo API listener protocol
-%% @doc rinamo.protocol tells Rinamo to use HTTP, HTTPS or SPDY when listening for connections.
+%% @doc Tells Rinamo to use HTTP, HTTPS or SPDY when listening for connections.
 %% @datatype enum http, https, spdy
 {mapping, "rinamo.network.protocol", "rinamo.network.protocol", [
   {default, http},
@@ -25,7 +25,7 @@
 ]}.
 
 %% Rinamo API listener bind IP and Port
-%% @doc rinamo.bind tells Rinamo which IP and port to bind to.
+%% @doc Tells Rinamo which IP and port to bind to.
 %% @datatype ip
 {mapping, "rinamo.network.bind", "rinamo.network.bind", [
   {default, {"127.0.0.1",8000}},
@@ -33,7 +33,7 @@
 ]}.
 
 %% Rinamo API number of listener acceptors
-%% @doc rinamo.protocol tells Rinamo how many Cowboy acceptors to use.
+%% @doc Tells Rinamo how many Cowboy acceptors to use.
 %% @datatype integer
 {mapping, "rinamo.network.acceptors", "rinamo.network.acceptors", [
   {default, 100},
@@ -42,7 +42,7 @@
 ]}.
 
 %% Rinamo SSL CA Cert File
-%% @doc rinamo.ssl.cacertfile path to the CA cert file
+%% @doc The path to the CA cert file that contains the back chain.
 %% @datatype file
 {mapping, "rinamo.ssl.cacertfile", "rinamo.ssl.cacertfile", [
   {datatype, file},
@@ -50,7 +50,7 @@
 ]}.
 
 %% Rinamo SSL Cert File
-%% @doc rinamo.ssl.certfile path to the Server cert file
+%% @doc The path to the cert file for this server.
 %% @datatype file
 {mapping, "rinamo.ssl.certfile", "rinamo.ssl.certfile", [
   {datatype, file},
@@ -58,7 +58,7 @@
 ]}.
 
 %% Rinamo SSL Key File
-%% @doc rinamo.ssl.keyfile path to the Server key file
+%% @doc The path to the server private key file.
 %% @datatype file
 {mapping, "rinamo.ssl.keyfile", "rinamo.ssl.keyfile", [
   {datatype, file},
@@ -66,7 +66,7 @@
 ]}.
 
 %% Rinamo Indexing Strategy
-%% @doc rinamo.index tells Rinamo which indexing stragegy to use.
+%% @doc Tells Rinamo which indexing stragegy to use for Range, LSI, and GSI.
 %% @datatype enum rinamo_idx_one_for_one, rinamo_idx_item_proxies
 {mapping, "rinamo.index.strategy", "rinamo.index.strategy", [
   {default, rinamo_idx_one_for_one},
@@ -74,3 +74,40 @@
     rinamo_idx_one_for_one,
     rinamo_idx_item_proxies]}}
 ]}.
+
+%% Rinamo Authorization Strategy
+%% @doc Tells Rinamo how to authorize requests and assign data owners.
+%% @datatype enum rinamo_auth_basic, rinamo_auth_keystone_v2, rinamo_auth_keystone_v3
+{mapping, "rinamo.auth.strategy", "rinamo.auth.strategy", [
+  {default, rinamo_auth_basic},
+  {datatype, {enum, [
+    rinamo_auth_basic,
+    rinamo_auth_keystone_v2,
+    rinamo_auth_keystone_v3]}}
+]}.
+
+%% Keystone Access Token (rinamo_admin_token)
+%% @doc Keystone service token used by Rinamo to authorize requests.
+%% @datatype string
+{mapping, "rinamo.keystone.token", "rinamo.keystone.token", [
+  {commented, "rinamo_admin_token"}
+]}.
+{ translation,
+  "rinamo.keystone.token",
+  fun(Conf) ->
+          Setting = cuttlefish:conf_get("rinamo.keystone.token", Conf),
+          list_to_binary(Setting)
+  end}.
+
+%% Keystone Base URL (http://10.0.0.3:35357)
+%% @doc The host and tcp port where the keystone api can be reached.
+%% @datatype string
+{mapping, "rinamo.keystone.baseurl", "rinamo.keystone.baseurl", [
+  {commented, "http://10.0.0.3:35357"}
+]}.
+{ translation,
+  "rinamo.keystone.baseurl",
+  fun(Conf) ->
+          Setting = cuttlefish:conf_get("rinamo.keystone.baseurl", Conf),
+          list_to_binary(Setting)
+  end}.
