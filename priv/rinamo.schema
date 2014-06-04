@@ -16,7 +16,7 @@
           end
   end}.
 
-%% Rinamo API listener protocol
+%% Rinamo listener protocol
 %% @doc Tells Rinamo to use HTTP, HTTPS or SPDY when listening for connections.
 %% @datatype enum http, https, spdy
 {mapping, "rinamo.network.protocol", "rinamo.network.protocol", [
@@ -24,7 +24,7 @@
   {datatype, {enum, [http, https, spdy]}}
 ]}.
 
-%% Rinamo API listener bind IP and Port
+%% Rinamo listener bind IP and Port
 %% @doc Tells Rinamo which IP and port to bind to.
 %% @datatype ip
 {mapping, "rinamo.network.bind", "rinamo.network.bind", [
@@ -32,7 +32,7 @@
   {datatype, ip}
 ]}.
 
-%% Rinamo API number of listener acceptors
+%% Rinamo number of listener acceptors
 %% @doc Tells Rinamo how many Cowboy acceptors to use.
 %% @datatype integer
 {mapping, "rinamo.network.acceptors", "rinamo.network.acceptors", [
@@ -40,6 +40,24 @@
   {datatype, integer},
   {validators, ["greater_than_zero"]}
 ]}.
+
+%% Rinamo URL Root Path
+%% @doc The url prefix path applied to Rinamo endpoints.
+{mapping, "rinamo.url.rootpath", "rinamo.url.rootpath", [
+  {default, none},
+  {datatype, [{atom, none}, string]}
+]}.
+{ translation,
+  "rinamo.url.rootpath",
+  fun(Conf) ->
+          Setting = cuttlefish:conf_get("rinamo.url.rootpath", Conf),
+          case Setting of
+            none -> <<"">>;
+            _ -> list_to_binary(Setting)
+          end
+  end}.
+
+
 
 %% Rinamo SSL CA Cert File
 %% @doc The path to the CA cert file that contains the back chain.

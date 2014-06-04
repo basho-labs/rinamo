@@ -5,6 +5,7 @@
     get_protocol/0,
     get_bind_address/0,
     get_num_acceptors/0,
+    get_root_path/0,
     get_index_strategy/0,
     get_auth_strategy/0,
     get_keystone_token/0,
@@ -25,6 +26,9 @@ get_bind_address() ->
 
 get_num_acceptors() ->
     proplists:get_value(acceptors, get_env(network)).
+
+get_root_path() ->
+    proplists:get_value(rootpath, get_env(url)).
 
 get_index_strategy() ->
     proplists:get_value(strategy, get_env(index)).

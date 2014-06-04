@@ -63,11 +63,12 @@ public class DynamoDBTest {
     String protocol = getConfigValue("protocol", props);
     String host = getConfigValue("host", props);
     String port = getConfigValue("port", props);
+    String root_path = getConfigValue("root_path", props);
 
     ClientConfiguration config = new ClientConfiguration();
     client = new AmazonDynamoDBClient(creds, config);
     if (host != null && host.length() > 0) {
-      client.setEndpoint(protocol + "://" + host + ":" + port);
+      client.setEndpoint(protocol + "://" + host + ":" + port + root_path);
     }
   }
 
