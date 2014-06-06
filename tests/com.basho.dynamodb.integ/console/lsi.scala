@@ -21,7 +21,7 @@ val secondary_indexes = new LocalSecondaryIndexes (
 
 val provisioned_throughput = ProvisionedThroughput.build_value(1L, 1L)
 
-val table_result = Table.create("LSI_Test_Table", tableKey, table_attributes, secondary_indexes, provisioned_throughput)
+val table_result = Table.create("LSI_Test_Table", tableKey, table_attributes, Some(secondary_indexes), None, provisioned_throughput)
 
 // create and put items
 val i1 = new Item(
