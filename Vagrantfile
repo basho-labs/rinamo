@@ -76,6 +76,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|
     # Network
     config.vm.hostname = "keystone"
     config.vm.network :private_network, ip: "10.0.0.3"
+    config.vm.network "forwarded_port", guest: 35357, host: 35357
 
     # SSH agent forwarding
     config.ssh.forward_agent = true

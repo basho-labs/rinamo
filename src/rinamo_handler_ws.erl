@@ -16,7 +16,7 @@
     websocket_info/3, websocket_terminate/3
 ]).
 
-init(_Type, Req, _Opts) ->
+init(_Type, _Req, _Opts) ->
     % divert cowboy to switch to WS connections
     {upgrade, protocol, cowboy_websocket}.
 
