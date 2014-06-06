@@ -7,28 +7,13 @@
     decode_put_item/1,
     decode_item_request/1,
     decode_query/1,
-    decode_rinamo_keypath/2]).
+    decode_rinamo_keypath/1,
+    encode_awsv4_hmac/7]).
 
 -include("rinamo.hrl").
 
-decode_rinamo_keypath([], Acc) ->
-    Acc;
-decode_rinamo_keypath(Binary, Acc) when is_binary(Binary) ->
-    List = binary:bin_to_list(Binary),
-    decode_rinamo_keypath(List, Acc);
-decode_rinamo_keypath(List, Acc) when is_list(List) ->
-    case lists:splitwith(fun(X) -> X /= ?RINAMO_SEPARATOR end, List) of
-        {First, [_ | Last]} ->
-            decode_rinamo_keypath(Last, lists:append(Acc, [First]));
-        {Last, []} ->
-            decode_rinamo_keypath([], lists:append(Acc, [Last]))
-    end.
-
-decode_batch_get_item(Json) ->
-    ok.
-
-decode_batch_write_item(Json) ->
-    ok.
+decode_rinamo_keypath(KeyPath) ->
+    decode_rinamo_keypath(KeyPath, []).
 
 decode_list_tables(Json) ->
     Limit = kvc:path("Limit", Json),
@@ -121,7 +106,32 @@ decode_query(Json) ->
 decode_scan(Json) ->
     ok.
 
+encode_awsv4_hmac(AccessKey, Signature, Host, Method, Path, Headers, BodyHash) ->
+    Ec2ValidateRequest = [{<<"ec2Credentials">>, [
+                    {<<"access">>, AccessKey},
+                    {<<"signature">>, Signature},
+                    {<<"host">>, Host},
+                    {<<"verb">>, Method},
+                    {<<"path">>, Path},
+                    {<<"params">>, [{}]},
+                    {<<"headers">>, Headers},
+                    {<<"body_hash">>, BodyHash}]}],
+    jsx:encode(Ec2ValidateRequest).
+
 %% Internal
+
+decode_rinamo_keypath([], Acc) ->
+    Acc;
+decode_rinamo_keypath(Binary, Acc) when is_binary(Binary) ->
+    List = binary:bin_to_list(Binary),
+    decode_rinamo_keypath(List, Acc);
+decode_rinamo_keypath(List, Acc) when is_list(List) ->
+    case lists:splitwith(fun(X) -> X /= ?RINAMO_SEPARATOR end, List) of
+        {First, [_ | Last]} ->
+            decode_rinamo_keypath(Last, lists:append(Acc, [First]));
+        {Last, []} ->
+            decode_rinamo_keypath([], lists:append(Acc, [Last]))
+    end.
 
 decode_keys([], Acc) ->
     lists:reverse(Acc);
@@ -207,16 +217,6 @@ decode_attribute_values([Attribute|Rest], Acc) ->
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
-
-decode_batch_get_item_test() ->
-    Actual = decode_batch_get_item([]),
-    Expected = ok,
-    ?assertEqual(Expected, Actual).
-
-decode_batch_write_item_test() ->
-    Actual = decode_batch_write_item([]),
-    Expected = ok,
-    ?assertEqual(Expected, Actual).
 
 decode_item_request_test() ->
     Json_Bin = <<"{

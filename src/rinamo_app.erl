@@ -63,10 +63,11 @@ start_cowboy() ->
     ).
 
 get_routes() ->
+    Prefix = rinamo_config:get_root_path(),
     [{'_', [
-        {<<"/">>, rinamo_handler_root, []},
-        {<<"/ping">>, rinamo_handler_ping, []},
-        {<<"/ws">>, rinamo_handler_ws, []}
+        {erlang:iolist_to_binary([Prefix, <<"/">>]), rinamo_handler_root, []},
+        {erlang:iolist_to_binary([Prefix, <<"/ping">>]), rinamo_handler_ping, []},
+        {erlang:iolist_to_binary([Prefix, <<"/ws">>]), rinamo_handler_ws, []}
     ]}].
 
 configure_riak() ->

@@ -30,6 +30,7 @@ object RinamoConsole {
      val protocol = DynamoDBTest.getConfigValue("protocol", props)
      val host = DynamoDBTest.getConfigValue("host", props)
      val port = DynamoDBTest.getConfigValue("port", props)
+     val root_path = DynamoDBTest.getConfigValue("root_path", props)
      input_stream.reset()
 
      val creds = new PropertiesCredentials(input_stream)
@@ -42,7 +43,7 @@ object RinamoConsole {
      val client = new AmazonDynamoDBClient(creds, config)
 
      if (host != null && host.length() > 0) {
-       client.setEndpoint(protocol + "://" + host + ":" + port)
+       client.setEndpoint(protocol + "://" + host + ":" + port + root_path)
      }
 
      // Control Output
