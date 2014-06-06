@@ -57,8 +57,6 @@
           end
   end}.
 
-
-
 %% Rinamo SSL CA Cert File
 %% @doc The path to the CA cert file that contains the back chain.
 %% @datatype file

@@ -24,7 +24,15 @@ execute(Req, Env) ->
             {Method, _} = cowboy_req:method(Req),
             case Method of
                 <<"POST">> ->
-                    execute_auth_handler(AuthToken, Req, Env);
+                    OwnerKey = execute_auth_handler(AuthToken, Req),
+                    case OwnerKey of
+                        none ->
+                            ErrorMsg = rinamo_error:make(unrecognized_client),
+                            {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
+                            {halt, NextReq};
+                        _ ->
+                            assign_data_owner(OwnerKey, Req, Env)
+                    end;
                 _ ->
                     % observed that sometimes AWS java client sends <<>> or <<"T">>
                     % may be related to:  https://github.com/extend/cowboy/issues/448
@@ -36,16 +44,26 @@ execute(Req, Env) ->
     end.
 
 %% Internal
-execute_auth_handler(AuthToken, Req, Env) ->
+execute_auth_handler(AuthToken, Req) ->
     {AccessKey, Signature} = tokenize_auth_header(binary_to_list(AuthToken)),
     lager:debug("AccessKey: ~p~n", [AccessKey]),
     lager:debug("Signature: ~p~n", [Signature]),
 
-    % TODO: alter codepath for auth strategy, assign data owner
+    % ------- begin auth concern
+
+    M = rinamo_config:get_auth_strategy(),
+    F = authorize,
+    A = [AccessKey, Signature, Req],
+    lager:debug("Auth Strat: ~p~n", [M]),
+    erlang:apply(M, F, A).
+
+    % ------- end auth concern
+
+assign_data_owner(OwnerKey, Req, Env) ->
     {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
     State = case HandlerOpts of
-        [] -> #state{user_key = AccessKey};
-        _ -> HandlerOpts#state{user_key = AccessKey}
+        [] -> #state{user_key = OwnerKey};
+        _ -> HandlerOpts#state{user_key = OwnerKey}
     end,
 
     NewEnv = [{handler_opts, State} | PartialEnv],
