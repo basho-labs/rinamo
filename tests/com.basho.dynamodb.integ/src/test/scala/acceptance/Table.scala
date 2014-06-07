@@ -1,3 +1,23 @@
+/* ---------------------------------------------------------------------
+%%
+%% Copyright (c) 2007-2014 Basho Technologies, Inc.  All Rights Reserved.
+%%
+%% This file is provided to you under the Apache License,
+%% Version 2.0 (the "License"); you may not use this file
+%% except in compliance with the License.  You may obtain
+%% a copy of the License at
+%%
+%%   http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing,
+%% software distributed under the License is distributed on an
+%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+%% KIND, either express or implied.  See the License for the
+%% specific language governing permissions and limitations
+%% under the License.
+%%
+%% ---------------------------------------------------------------------*/
+
 package acceptance
 
 import scala.collection.JavaConverters._
@@ -71,7 +91,7 @@ object Table {
       }
       case None => {}
     }
-      
+
     return client.createTable(request)
   }
 
@@ -143,11 +163,11 @@ object Table {
    * Assumes the hash key is a number, range key is a string.
    * Use 'query' if you want full control over this.
    */
-  def range_query(table_name:String, 
-      hash_key:String, hash_value:String, 
-      range_key:Option[String] = None, 
-      operator:Option[String] = Some(ComparisonOperator.EQ.toString()), 
-      range_value:Option[String] = None, 
+  def range_query(table_name:String,
+      hash_key:String, hash_value:String,
+      range_key:Option[String] = None,
+      operator:Option[String] = Some(ComparisonOperator.EQ.toString()),
+      range_value:Option[String] = None,
       between_value:Option[String] = None): QueryResult = {
     val key_conditions = new KeyConditions
     key_conditions.add(hash_key, "N", "EQ", hash_value)

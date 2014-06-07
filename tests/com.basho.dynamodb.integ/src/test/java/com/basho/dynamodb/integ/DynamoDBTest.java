@@ -1,3 +1,23 @@
+/* ---------------------------------------------------------------------
+%%
+%% Copyright (c) 2007-2014 Basho Technologies, Inc.  All Rights Reserved.
+%%
+%% This file is provided to you under the Apache License,
+%% Version 2.0 (the "License"); you may not use this file
+%% except in compliance with the License.  You may obtain
+%% a copy of the License at
+%%
+%%   http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing,
+%% software distributed under the License is distributed on an
+%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+%% KIND, either express or implied.  See the License for the
+%% specific language governing permissions and limitations
+%% under the License.
+%%
+%% ---------------------------------------------------------------------*/
+
 package com.basho.dynamodb.integ;
 
 import static org.junit.Assert.assertNotNull;
@@ -31,7 +51,7 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 public class DynamoDBTest {
   protected AmazonDynamoDBClient client;
   protected String tableName;
-  
+
   public static String getConfigValue(String key, Properties props) {
     String rtnval = null;
     if (props.containsKey(key)) {
@@ -59,7 +79,7 @@ public class DynamoDBTest {
     catch (IOException e) {
       e.printStackTrace();
     }
-    
+
     String protocol = getConfigValue("protocol", props);
     String host = getConfigValue("host", props);
     String port = getConfigValue("port", props);
@@ -75,7 +95,7 @@ public class DynamoDBTest {
   @After
   public void after() {
   }
-  
+
   protected CreateTableRequest createHashKeyNTable(String newTable, String hashKeyName, long rc, long wc) {
     ArrayList<KeySchemaElement> ks = new ArrayList<KeySchemaElement>();
     ArrayList<AttributeDefinition> attributeDefinitions = new ArrayList<AttributeDefinition>();
@@ -105,7 +125,7 @@ public class DynamoDBTest {
       }
     };
   }
-  
+
   protected Callable<Boolean> tableInList(final String table) {
     return new Callable<Boolean>() {
       public Boolean call() {

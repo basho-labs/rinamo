@@ -1,3 +1,23 @@
+/* ---------------------------------------------------------------------
+%%
+%% Copyright (c) 2007-2014 Basho Technologies, Inc.  All Rights Reserved.
+%%
+%% This file is provided to you under the Apache License,
+%% Version 2.0 (the "License"); you may not use this file
+%% except in compliance with the License.  You may obtain
+%% a copy of the License at
+%%
+%%   http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing,
+%% software distributed under the License is distributed on an
+%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+%% KIND, either express or implied.  See the License for the
+%% specific language governing permissions and limitations
+%% under the License.
+%%
+%% ---------------------------------------------------------------------*/
+
 package com.basho.dynamodb.integ;
 
 import java.io.IOException;
@@ -10,14 +30,14 @@ import org.slf4j.LoggerFactory;
  * An output stream which writes to the application logger.
  * This is used to redirect rouge console output into the
  * logger architecture.
- * 
+ *
  * Created on Oct 27, 2005 at 12:20:34 PM
  * @author Randy Secrist
  */
 public class LogOutputStream extends OutputStream {
 
-    /** 
-     * The buffer where data is stored. 
+    /**
+     * The buffer where data is stored.
      */
     protected byte buf[];
 
@@ -31,13 +51,13 @@ public class LogOutputStream extends OutputStream {
      * @param level The logger level to use when writing to the log.
      */
     protected String level;
-    
+
     LogOutputStream(String level) {
         this.level = level;
     }
 
     /**
-     * Writes the specified byte to this byte array output stream. 
+     * Writes the specified byte to this byte array output stream.
      *
      * @param   b   the byte to be written.
      */
@@ -59,7 +79,7 @@ public class LogOutputStream extends OutputStream {
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified byte array 
+     * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to the logger api.
      *
      * @param   b     the data.

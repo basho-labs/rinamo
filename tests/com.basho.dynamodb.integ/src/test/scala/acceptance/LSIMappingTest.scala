@@ -1,3 +1,23 @@
+/* ---------------------------------------------------------------------
+%%
+%% Copyright (c) 2007-2014 Basho Technologies, Inc.  All Rights Reserved.
+%%
+%% This file is provided to you under the Apache License,
+%% Version 2.0 (the "License"); you may not use this file
+%% except in compliance with the License.  You may obtain
+%% a copy of the License at
+%%
+%%   http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing,
+%% software distributed under the License is distributed on an
+%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+%% KIND, either express or implied.  See the License for the
+%% specific language governing permissions and limitations
+%% under the License.
+%%
+%% ---------------------------------------------------------------------*/
+
 package acceptance
 
 import org.scalatest.BeforeAndAfterEach
@@ -57,7 +77,7 @@ class LSIMappingTest extends FunSpec
     ("ProductCategory", "S", "Book"),
     ("ProductName", "S", "The Great Outdoors"),
     ("OrderStatus", "S", "PACKING ITEMS"))
-  
+
   val item_2 = new Item(
     ("CustomerId", "S", "alice@example.com"),
     ("OrderId", "N", "2"),
@@ -162,7 +182,7 @@ class LSIMappingTest extends FunSpec
         Table.put(table_name)(item_1, item_2, item_3, item_4, item_5,
                                   item_6, item_7, item_8, item_9, item_10)
       }
-      
+
       it ("should query bob's open orders") {
         val key_conditions_1 = new KeyConditions(
           ("CustomerId", "S", "EQ", "bob@example.com", None),
@@ -170,7 +190,7 @@ class LSIMappingTest extends FunSpec
         val results_1 = Table.query(table_name, key_conditions_1, Some("IsOpenIndex"))
         assert(1 == results_1.getCount())
       }
-      
+
       it ("should query bob's orders created after a specific date time") {
         val key_conditions_2 = new KeyConditions(
           ("CustomerId", "S", "EQ", "bob@example.com", None),
