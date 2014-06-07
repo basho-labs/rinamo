@@ -165,12 +165,15 @@ class GSIMappingTest extends FunSpec
         assert(2 == results_2.getCount())
       }
 
-      it ("should query by due date index using one condition") {
+      it ("should query by due date index using one condition") (pending)
+      /*
+      {
         val key_conditions_3 = new KeyConditions(
           ("DueDate", "S", "EQ", "2013-11-30", None))
         val results_3 = Table.query(table_name, key_conditions_3, Some("DueDateIndex"))
         assert(2 == results_3.getCount())
       }
+      */
     }
     it ("should delete gsi table") {
       try {
