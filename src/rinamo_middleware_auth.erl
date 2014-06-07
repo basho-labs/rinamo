@@ -24,14 +24,15 @@ execute(Req, Env) ->
             {Method, _} = cowboy_req:method(Req),
             case Method of
                 <<"POST">> ->
-                    OwnerKey = execute_auth_handler(AuthToken, Req),
+                    {Body, OwnerKey} = execute_auth_handler(AuthToken, Req),
                     case OwnerKey of
                         none ->
                             ErrorMsg = rinamo_error:make(unrecognized_client),
                             {_, NextReq} = rinamo_response:send(ErrorMsg#error.http_code, rinamo_error:format(ErrorMsg), Req),
                             {halt, NextReq};
                         _ ->
-                            assign_data_owner(OwnerKey, Req, Env)
+                            NewEnv = set_handler_state(OwnerKey, Body, Env),
+                            {ok, Req, NewEnv}
                     end;
                 _ ->
                     % observed that sometimes AWS java client sends <<>> or <<"T">>
@@ -48,27 +49,26 @@ execute_auth_handler(AuthToken, Req) ->
     {AccessKey, Signature} = tokenize_auth_header(binary_to_list(AuthToken)),
     lager:debug("AccessKey: ~p~n", [AccessKey]),
     lager:debug("Signature: ~p~n", [Signature]),
+    {_, Body, _} = cowboy_req:body(Req),
 
     % ------- begin auth concern
 
     M = rinamo_config:get_auth_strategy(),
     F = authorize,
-    A = [AccessKey, Signature, Req],
+    A = [AccessKey, Signature, Body, Req],
     lager:debug("Auth Strat: ~p~n", [M]),
-    erlang:apply(M, F, A).
+    {Body, erlang:apply(M, F, A)}.
 
     % ------- end auth concern
 
-assign_data_owner(OwnerKey, Req, Env) ->
+set_handler_state(OwnerKey, Body, Env) ->
     {_, {_, HandlerOpts}, PartialEnv} = lists:keytake(handler_opts, 1, Env),
     State = case HandlerOpts of
-        [] -> #state{user_key = OwnerKey};
-        _ -> HandlerOpts#state{user_key = OwnerKey}
+        [] -> #state{owner_key = OwnerKey, body = Body};
+        _ -> HandlerOpts#state{owner_key = OwnerKey, body = Body}
     end,
 
-    NewEnv = [{handler_opts, State} | PartialEnv],
-
-    {ok, Req, NewEnv}.
+    [{handler_opts, State} | PartialEnv].
 
 
 tokenize_auth_header(HeaderValue) ->

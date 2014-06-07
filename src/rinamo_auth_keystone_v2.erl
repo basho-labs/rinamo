@@ -1,13 +1,13 @@
 -module(rinamo_auth_keystone_v2).
 
--export([authorize/3]).
+-export([authorize/4]).
 
 % Utilize Keystone to verify access using the
 % AWS V4 Request Signing HMac Process
 %
 % If authorization passes, this function will return the project id
 % as the primary data owner.
-authorize(AccessKey, Signature, Req) ->
+authorize(AccessKey, Signature, Body, Req) ->
     KeyStoneBaseURL = rinamo_config:get_keystone_baseurl(),
     KeyStoneCType = "application/json",
     KeyStoneAuthPath = "/v2.0/ec2tokens",
@@ -16,7 +16,6 @@ authorize(AccessKey, Signature, Req) ->
     {Path, _} = cowboy_req:path(Req),
     {Method, _} = cowboy_req:method(Req),
     {Headers, _} = cowboy_req:headers(Req),
-    {_, Body, _} = cowboy_req:body(Req),
     Hash = crypto:hash(sha256, Body),
     Digest = lists:flatten([integer_to_list(X, 16) || <<X:4>> <= Hash]),
     ContentSHA256 = erlang:list_to_binary(string:to_lower(Digest)),

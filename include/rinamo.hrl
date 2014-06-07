@@ -1,5 +1,6 @@
 -record(state, {
-	user_key :: binary()
+	owner_key :: binary(),
+	body :: binary()
 }).
 
 -record(error, {

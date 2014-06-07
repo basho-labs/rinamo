@@ -8,9 +8,9 @@
 
 -include("rinamo.hrl").
 
--spec put_item(binary(), any(), any(), #state{ user_key :: binary() }) -> ok.
+-spec put_item(binary(), any(), any(), #state{ owner_key :: binary() }) -> ok.
 put_item(Table, Item, Expectations, AWSContext) ->
-    UserKey = AWSContext#state.user_key,
+    UserKey = AWSContext#state.owner_key,
     % TODO:  expectations (conditional puts)
     StrongConsistency = case Expectations of
         [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}] ->
@@ -36,9 +36,9 @@ put_item(Table, Item, Expectations, AWSContext) ->
 
     ok.
 
--spec get_item(binary(), binary(), #state{ user_key :: binary() }) -> any().
+-spec get_item(binary(), binary(), #state{ owner_key :: binary() }) -> any().
 get_item(Table, Key, AWSContext) ->
-    UserKey = AWSContext#state.user_key,
+    UserKey = AWSContext#state.owner_key,
     B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
 
     {_, Item_V} = rinamo_kv:get(rinamo_kv:client(), B, Key),
@@ -49,9 +49,9 @@ get_item(Table, Key, AWSContext) ->
         _ -> jsx:decode(Item_V)
     end.
 
--spec delete_item(binary(), binary(), #state{ user_key :: binary() }) -> ok.
+-spec delete_item(binary(), binary(), #state{ owner_key :: binary() }) -> ok.
 delete_item(Table, Key, AWSContext) ->
-    UserKey = AWSContext#state.user_key,
+    UserKey = AWSContext#state.owner_key,
     _ = case Key of
         [{_, {_, HashKeyVal}}] ->
             B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
@@ -65,7 +65,7 @@ delete_item(Table, Key, AWSContext) ->
     ok.
 
 query(Table, IndexName, KeyConditions, AWSContext) ->
-    UserKey = AWSContext#state.user_key,
+    UserKey = AWSContext#state.owner_key,
 
     MappedConditions = map_key_conditions(Table, IndexName, KeyConditions, AWSContext),
     % TODO: Validation
@@ -192,7 +192,7 @@ write_index_value(UserKey, Table, IndexName, IKeySchema, Item) ->
 % [{hash, HashAttr}] or [{hash, HashAttr}, {range, RangeAttr}]
 %
 % lsi & gsi is a list of index info
--spec get_table_info(binary(), #state{ user_key :: binary() }) -> [tuple()].
+-spec get_table_info(binary(), #state{ owner_key :: binary() }) -> [tuple()].
 get_table_info(Table, AWSContext) when is_binary(Table) ->
     TD = rinamo_tables:load_table_def(Table, AWSContext),
     case TD of
@@ -276,7 +276,7 @@ put_item_test() ->
     Table = <<"TableName">>,
     Item = kvc:path("Item", jsx:decode(item_fixture())),
     Expectations = [{}],
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
     _ = put_item(Table, Item, Expectations, AWSContext),
 
     meck:unload([rinamo_tables, rinamo_kv]).
@@ -290,7 +290,7 @@ get_item_test() ->
 
     Table = <<"Item Table">>,
     Key = <<"Some_Item_Key">>,
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     Actual = get_item(Table, Key, AWSContext),
     Expected = [<<"Some_Item_Def_JSON_Here">>],
@@ -308,7 +308,7 @@ delete_item_test() ->
     Keys = [
         {<<"HASH">>, {<<"S">>, <<"Some_Item_Key">>}}
     ],
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     Actual = delete_item(Table, Keys, AWSContext),
     Expected = ok,
@@ -328,7 +328,7 @@ map_key_condition_range_test() ->
         {<<"ISBN">>, [{<<"N">>,<<"9876">>}],<<"GT">>},
         {<<"Id">>,[{<<"N">>,<<"101">>}],<<"EQ">>},
         {<<"AnotherCondition">>, [{<<"S">>,<<"XYZ">>}],<<"LT">>}],
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     Actual = map_key_conditions(Table, IndexName, KeyConditions, AWSContext),
 
@@ -377,7 +377,7 @@ query_one_one_test() ->
         {<<"Title">>,[{<<"S">>,<<"Book 102">>}],<<"BEGINS_WITH">>},
         {<<"ISBN">>, [{<<"S">>,<<"ABC">>}],<<"EQ">>},
         {<<"Id">>,[{<<"N">>,<<"102">>}],<<"EQ">>}],
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     Actual = query(Table, <<>>, KeyConditions, AWSContext),
 
@@ -412,7 +412,7 @@ query_item_proxy_test() ->
         {<<"Title">>,[{<<"S">>,<<"Book 101">>}],<<"BEGINS_WITH">>},
         {<<"ISBN">>, [{<<"S">>,<<"ABC">>}],<<"EQ">>},
         {<<"Id">>,[{<<"N">>,<<"101">>}],<<"EQ">>}],
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     Actual = query(Table, <<>>, KeyConditions, AWSContext),
 

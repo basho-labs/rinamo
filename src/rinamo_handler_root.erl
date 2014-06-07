@@ -42,7 +42,7 @@ handle(Req, State) ->
 
         lager:debug("OpFun: ~p~n", [OpFun]),
 
-        {_, Body, _} = cowboy_req:body(Req),
+        Body = State#state.body,
 
         case OpFun of
             {error, unimplemented} ->
