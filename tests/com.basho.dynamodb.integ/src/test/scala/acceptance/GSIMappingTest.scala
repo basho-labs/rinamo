@@ -20,7 +20,7 @@ import com.jayway.awaitility.Awaitility._
 class GSIMappingTest extends FunSpec
   with AWSHelper with MockitoSugar with Matchers
   with BeforeAndAfterEach with AwaitilitySupport {
-  
+
   val table_attributes = new Attributes(
     ("IssueId", "S"),
     ("Title", "S"),
@@ -35,7 +35,7 @@ class GSIMappingTest extends FunSpec
   val createDateIndexKey = new KeySchema(
     ("CreateDate", KeyType.HASH),
     ("IssueId", KeyType.RANGE))
-  
+
   val titleIndexKey = new KeySchema(
     ("Title", KeyType.HASH),
     ("IssueId", KeyType.RANGE))
@@ -46,16 +46,16 @@ class GSIMappingTest extends FunSpec
   val createDateIndexProjection = Projection.build_value(ProjectionType.INCLUDE, Some(List("Description", "Status")))
   val titleIndexProjection = Projection.build_value(ProjectionType.KEYS_ONLY , None)
   val dueDateIndexProjection = Projection.build_value(ProjectionType.ALL, None)
-  
+
   val provisioned_throughput = ProvisionedThroughput.build_value(1L, 1L)
 
   val gsi_secondary_indexes = new GlobalSecondaryIndexes (
     ("CreateDateIndex", createDateIndexKey, createDateIndexProjection, provisioned_throughput),
     ("TitleIndex", titleIndexKey, titleIndexProjection, provisioned_throughput),
     ("DueDateIndex", dueDateIndexKey, dueDateIndexProjection, provisioned_throughput))
- 
+
   val table_provisioned_throughput = ProvisionedThroughput.build_value(1L, 1L)
-  
+
   val item_1 = new Item(
     ("IssueId", "S", "A-101"),
     ("Title", "S", "Compilation error"),
@@ -106,7 +106,7 @@ class GSIMappingTest extends FunSpec
     ("Priority", "N", "5"),
     ("Status", "S", "Assigned"))
 
-  describe ("[???]: table type, gsi, LWW behavior") {
+  describe ("[US247960]: table type, gsi, LWW behavior") {
     val table_name = "test_table_gsi"
     it ("should create gsi table") {
       logger.info("Creating Table ...")
@@ -128,7 +128,7 @@ class GSIMappingTest extends FunSpec
       it ("should add data and build table indicies") {
         Table.put(table_name)(item_1, item_2, item_3, item_4, item_5)
       }
-      
+
       it ("should query by create date index using two conditions") {  
         val key_conditions_1 = new KeyConditions(
           ("CreateDate", "S", "EQ", "2013-11-01", None),
@@ -136,7 +136,7 @@ class GSIMappingTest extends FunSpec
         val results_1 = Table.query(table_name, key_conditions_1, Some("CreateDateIndex"))
         assert(3 == results_1.getCount())
       }
-      
+
       it ("should query by title index using two conditions") {
         val key_conditions_2 = new KeyConditions(
           ("Title", "S", "EQ", "Compilation error", None),
@@ -144,7 +144,7 @@ class GSIMappingTest extends FunSpec
         val results_2 = Table.query(table_name, key_conditions_2, Some("TitleIndex"))
         assert(2 == results_2.getCount())
       }
-      
+
       it ("should query by due date index using one condition") {
         val key_conditions_3 = new KeyConditions(
           ("DueDate", "S", "EQ", "2013-11-30", None))
