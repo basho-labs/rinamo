@@ -175,7 +175,7 @@ create_table_test() ->
     meck:expect(rinamo_tables, load_table_def, 2, notfound),
     meck:expect(rinamo_tables, create_table, 3, {ok, ok}),
 
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
     Actual = rinamo_api:create_table(jsx:decode(table_fixture()), AWSContext),
     io:format("Actual: ~p", [Actual]),
     [{_, [{_,TableName}, {_, AttributeDefinitions}, {_, KeySchema},
@@ -208,7 +208,7 @@ list_tables_with_exclusive_start_test() ->
                                                 <<"Table_3">>, <<"Table_4">>]),
 
     Input = <<"{\"ExclusiveStartTableName\":\"Table_1\", \"Limit\":2}">>,
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
     Actual = rinamo_api:list_tables(jsx:decode(Input), AWSContext),
     io:format("Actual ~p", [Actual]),
     [{<<"TableNames">>, [T2, T3]},
@@ -224,7 +224,7 @@ list_tables_test() ->
                                                 <<"Table_3">>, <<"Table_4">>]),
 
     Input = <<"{}">>,
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
     Actual = rinamo_api:list_tables(jsx:decode(Input), AWSContext),
     io:format("Actual ~p", [Actual]),
     [{<<"TableNames">>, [T1, T2, T3, T4]}] = Actual,
@@ -241,7 +241,7 @@ describe_table_test() ->
     meck:expect(rinamo_tables, load_table_def, 2, TableDef),
 
     Input = <<"{\"TableName\":\"ProductCatalog\"}">>,
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
     Actual = rinamo_api:describe_table(jsx:decode(Input), AWSContext),
     io:format("Actual ~p", [Actual]),
     [{<<"Table">>, ResultDef}] = Actual,
@@ -255,7 +255,7 @@ put_item_test() ->
     meck:expect(rinamo_tables, load_table_def, 2, TableDef),
     meck:expect(rinamo_items, put_item, 4, ok),
 
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
     PutItemRequest = jsx:decode(item_fixture()),
     [_, PutItemRequestNoTable] = PutItemRequest,
 
@@ -279,7 +279,7 @@ get_item_test() ->
     Expected = [{<<"Item">>, Item}],
 
     GetItemRequest = jsx:decode(get_request_fixture()),
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     R0 = rinamo_api:get_item(GetItemRequest, AWSContext),
     io:format("Actual ~p", [R0]),
@@ -293,7 +293,7 @@ delete_item_test() ->
     Expected = [{}],
 
     DeleteItemRequest = jsx:decode(get_request_fixture()),
-    AWSContext=#state{ user_key = <<"TEST_API_KEY">> },
+    AWSContext=#state{ owner_key = <<"TEST_API_KEY">> },
 
     R0 = rinamo_api:delete_item(DeleteItemRequest, AWSContext),
     io:format("Actual ~p", [R0]),
