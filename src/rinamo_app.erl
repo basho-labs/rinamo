@@ -51,11 +51,8 @@ stop(_State) ->
 start_cowboy() ->
     {CowboyStartFun, ProtocolOpts} = case rinamo_config:get_protocol() of
         http -> {fun cowboy:start_http/4, none};
-        https -> {fun cowboy:start_https/4,
-            [{cacertfile, rinamo_config:get_ssl_cacertfile()},
-             {certfile, rinamo_config:get_ssl_certfile()},
-             {keyfile, rinamo_config:get_ssl_keyfile()}]};
-        spdy -> {fun cowboy:start_spdy/4, none}
+        https -> {fun cowboy:start_https/4, get_ssl_opts()};
+        spdy -> {fun cowboy:start_spdy/4, get_ssl_opts()}
     end,
 
     {RawIp, Port} = rinamo_config:get_bind_address(),
@@ -89,6 +86,11 @@ get_routes() ->
         {erlang:iolist_to_binary([Prefix, <<"/ping">>]), rinamo_handler_ping, []},
         {erlang:iolist_to_binary([Prefix, <<"/ws">>]), rinamo_handler_ws, []}
     ]}].
+
+get_ssl_opts() ->
+    [{cacertfile, rinamo_config:get_ssl_cacertfile()},
+     {certfile, rinamo_config:get_ssl_certfile()},
+     {keyfile, rinamo_config:get_ssl_keyfile()}].
 
 configure_riak() ->
     riak_core_bucket_type:create(?RINAMO_COUNTER_TYPE, [{datatype, counter}]),
