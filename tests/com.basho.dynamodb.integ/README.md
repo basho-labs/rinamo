@@ -2,7 +2,7 @@
 These tests use the AWS Java Client Library.
 
 ## Prerequisites
-* Java 1.7
+* Java 1.7 or 1.8
 * Scala 2.10.4
 * Maven 3.2.1
   * on OS X:  `brew install maven`
@@ -11,7 +11,7 @@ These tests use the AWS Java Client Library.
 If your system has all the prerequisites, running things is easy:
 
 * Tests
-  * `mvn test`
+  * `mvn verify -Pitest`
 
 * Test Console
   * `mvn test-compile scala:console`
