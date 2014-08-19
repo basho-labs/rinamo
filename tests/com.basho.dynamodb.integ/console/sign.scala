@@ -43,9 +43,9 @@ val regionName = "us-east-1"
 val serviceName = "dynamodb"
 val TERMINATOR = "aws4_request"
 
-val stringToSign = "AWS4-HMAC-SHA256\n" + timeStamp + "\n" + datestamp + "/" +
+val stringToSign = ("AWS4-HMAC-SHA256\n" + timeStamp + "\n" + dateStamp + "/" +
                     regionName + "/" + serviceName + "/" + TERMINATOR + "\n" +
-                    canonicalRequestHash
+                    canonicalRequestHash)
 
 val kSecret = ("AWS4" + secret_key).getBytes()
 val kDate = signer.sign(dateStamp, kSecret, SigningAlgorithm.HmacSHA256)
