@@ -26,11 +26,8 @@
 
 -import(rinamo_crdt, [read_and_modify/6, get/4, delete/4]).
 
--include("rinamo.hrl").
--include("rinamo_kv_types.hrl").
-
 client() ->
-    {ok,C} = riak:local_client(),
+    {ok, C} = riak:local_client(),
     C.
 
 -spec increment(any(), binary(), binary(), term()) -> ok | notfound.
@@ -44,7 +41,10 @@ decrement(Client, Bucket, Key, Scalar) ->
 -spec value(any(), binary(), binary()) -> {value, term()} | notfound.
 value(Client, Bucket, Key) ->
     case get(Client, Bucket, Key, riak_dt_pncounter) of
-        {ok, RO} -> {value, riak_kv_crdt:counter_value(RO)};
+        {ok, RO} ->
+            {{_, Counter}, Stats} = riak_kv_crdt:value(RO, riak_dt_pncounter),
+            [ riak_kv_stat:update(S) || S <- Stats ],
+            {value, Counter};
         _ -> notfound
     end.
 

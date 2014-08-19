@@ -27,13 +27,16 @@
 -import(rinamo_crdt, [read_and_modify/6, get/4, delete/4]).
 
 client() ->
-    {ok,C} = riak:local_client(),
+    {ok, C} = riak:local_client(),
     C.
 
 -spec value(any(), binary(), binary()) -> {value, list()} | notfound.
 value(Client, Bucket, Key) ->
     case get(Client, Bucket, Key, riak_dt_orswot) of
-        {ok, RO} -> {value, riak_kv_crdt:set_value(RO)};
+        {ok, RO} ->
+            {{_, Set}, Stats} = riak_kv_crdt:value(RO, riak_dt_orswot),
+            [ riak_kv_stat:update(S) || S <- Stats ],
+            {value, Set};
         _ -> notfound
     end.
 
