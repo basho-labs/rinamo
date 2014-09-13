@@ -29,7 +29,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <aws.sdk.version>1.7.12</aws.sdk.version>
+    <aws.sdk.version>1.8.9.1</aws.sdk.version>
     <powermock.version>1.5.4</powermock.version>
     <scala.version>2.10.4</scala.version>
     <slf4j.version>1.7.7</slf4j.version>
