@@ -24,6 +24,7 @@ import com.amazonaws._
 import com.amazonaws.auth._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
+import com.amazonaws.services.s3._
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,7 +32,8 @@ import org.slf4j.LoggerFactory
 import bootstrap.rinamo._
 
 trait AWSHelper {
-  val client: AmazonDynamoDBClient = { RinamoConsole.config }
+  val dynamo_client: AmazonDynamoDBClient = { RinamoConsole.dynamo_config }
+  val s3_client: AmazonS3Client = { RinamoConsole.s3_config }
 
   // enable test side logging using profile: -Ptest-debug-logging
   val logger: Logger = LoggerFactory.getLogger(this.getClass.getName)

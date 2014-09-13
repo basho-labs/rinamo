@@ -97,3 +97,7 @@ object ProvisionedThroughput {
 object Table {
   implicit def alias(table:Table.type) = acceptance.Table
 }
+
+object S3 {
+  implicit def alias(s3:S3.type) = acceptance.S3
+}
