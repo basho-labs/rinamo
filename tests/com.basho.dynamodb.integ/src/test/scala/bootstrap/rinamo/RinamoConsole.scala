@@ -26,6 +26,7 @@ import com.amazonaws.auth._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
 import com.amazonaws.services.s3._
+
 import java.util.Properties
 import com.basho.dynamodb.integ.DynamoDBTest
 import com.basho.dynamodb.integ.ConsoleRedirector
@@ -36,15 +37,6 @@ object RinamoConsole {
      b.boot
      MainGenericRunner.main(args)
      System.exit(0)
-   }
-
-   def s3_config():AmazonS3Client = {
-     val input_stream = classOf[DynamoDBTest]
-                          .getResourceAsStream("AwsCredentials.properties")
-     val creds = new PropertiesCredentials(input_stream)
-     val config = new ClientConfiguration()
-     val client = new AmazonS3Client(creds, config)
-     return client
    }
 
    def dynamo_config(): AmazonDynamoDBClient = {
@@ -79,6 +71,15 @@ object RinamoConsole {
      System.setOut(cout); System.setErr(cerr)
      Console.setOut(cout); Console.setErr(cerr)
 
+     return client
+   }
+
+   def s3_config():AmazonS3Client = {
+     val input_stream = classOf[DynamoDBTest]
+                          .getResourceAsStream("AwsCredentials.properties")
+     val creds = new PropertiesCredentials(input_stream)
+     val config = new ClientConfiguration()
+     val client = new AmazonS3Client(creds, config)
      return client
    }
 }
