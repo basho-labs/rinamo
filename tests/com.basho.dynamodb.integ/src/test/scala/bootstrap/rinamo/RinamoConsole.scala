@@ -26,6 +26,8 @@ import com.amazonaws.auth._
 import com.amazonaws.services.dynamodbv2._
 import com.amazonaws.services.dynamodbv2.model._
 import com.amazonaws.services.s3._
+import com.amazonaws.SDKGlobalConfiguration._
+
 
 import java.util.Properties
 import com.basho.dynamodb.integ.DynamoDBTest
@@ -59,6 +61,8 @@ object RinamoConsole {
      config.setConnectionTimeout(1000)
      config.setMaxConnections(10)
      config.setUserAgent("Rinamo Console")
+     System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "true")
+
      val client = new AmazonDynamoDBClient(creds, config)
 
      if (host != null && host.length() > 0) {
@@ -79,6 +83,8 @@ object RinamoConsole {
                           .getResourceAsStream("AwsCredentials.properties")
      val creds = new PropertiesCredentials(input_stream)
      val config = new ClientConfiguration()
+     System.setProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "true")
+
      val client = new AmazonS3Client(creds, config)
      return client
    }
