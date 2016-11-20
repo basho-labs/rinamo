@@ -32,8 +32,8 @@ execute(Req, Env) ->
     {ok, TaggedReq, Env}.
 
 create_request_id() ->
-    uuid:uuid_to_string(uuid:get_v5_compat(uuid:get_v1(uuid:new(self(), erlang)))).
-
+    {UUID, _} = uuid:get_v1(uuid:new(self(), erlang)),
+    uuid:uuid_to_string(uuid:get_v5_compat(UUID)).
 
 
 -ifdef(TEST).
