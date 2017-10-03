@@ -75,7 +75,7 @@ query(PartitionNS, PartitionId, Query, Conditions) ->
             []
     end.
 
-delete(TBD) ->
+delete(_TBD) ->
     ok.
 
 filter_item(ItemAttrList, KeyConditions) ->

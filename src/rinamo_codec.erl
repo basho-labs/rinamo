@@ -69,10 +69,10 @@ decode_put_item(Json) ->
      {return_values, ReturnValues},
      {tablename, TableName}].
 
-decode_update_item(Json) ->
+decode_update_item(_Json) ->
     ok.
 
-decode_delete_item(Json) ->
+decode_delete_item(_Json) ->
     ok.
 
 decode_table_name(Json) ->
@@ -96,7 +96,7 @@ decode_create_table(Json) ->
      {provisioned_throughput, ProvisionedThroughput},
      {raw_schema, Json}].
 
-decode_update_table(Json) ->
+decode_update_table(_Json) ->
     ok.
 
 decode_query(Json) ->
@@ -123,7 +123,7 @@ decode_query(Json) ->
      {select, Select},
      {tablename, TableName}].
 
-decode_scan(Json) ->
+decode_scan(_Json) ->
     ok.
 
 encode_awsv4_hmac(AccessKey, Signature, Host, Method, Path, Headers, BodyHash) ->

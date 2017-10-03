@@ -40,7 +40,7 @@ create_table(DynamoRequest, AWSContext) ->
     [ {_, Table}, {_, Fields}, {_, KeySchema}, {lsi, LSI}, {gsi, GSI},
       {_, ProvisionedThroughput}, {_, RawSchema} ] = rinamo_codec:decode_create_table(DynamoRequest),
 
-    {MegaSecs, Secs, MicroSecs} = now(),
+    {MegaSecs, Secs, MicroSecs} = erlang:timestamp(),
     CreationTime = (MegaSecs * 1000000 + Secs) + MicroSecs / 1000000,
 
     case rinamo_tables:load_table_def(Table, AWSContext) of

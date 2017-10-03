@@ -33,7 +33,7 @@ put_item(Table, Item, Expectations, AWSContext) ->
     UserKey = AWSContext#state.owner_key,
     % TODO:  expectations (conditional puts)
     StrongConsistency = case Expectations of
-        [{FieldName, [{<<"Exists">>, Expected}, {FieldType, FieldValue}]}] ->
+        [{_FieldName, [{<<"Exists">>, _Expected}, {_FieldType, _FieldValue}]}] ->
             true;
         _ ->
             false
@@ -76,7 +76,7 @@ delete_item(Table, Key, AWSContext) ->
         [{_, {_, HashKeyVal}}] ->
             B = erlang:iolist_to_binary([UserKey, ?RINAMO_SEPARATOR, Table]),
             rinamo_kv:delete(rinamo_kv:client(), B, HashKeyVal);
-        [{_, {_, HashKeyVal}}, {RangeKeyAttribute, {_, RangeKeyVale}}] ->
+        [{_, {_, _HashKeyVal}}, {_RangeKeyAttribute, {_, _RangeKeyVal}}] ->
             % ------- begin index concern
             % ------- end index concern
             ok
@@ -189,7 +189,7 @@ store_gsi(_, _, [], _) ->
 write_index_value(UserKey, Table, IndexName, IKeySchema, Item) ->
     KeySchema = map_key_types(IKeySchema, []),
     _ = case KeySchema of
-        [{HashKeyAttribute, hash}] ->
+        [{_HashKeyAttribute, hash}] ->
             % TODO: handle this direct hash key case, workaround for not
             % having actual columns in Riak
             ok;
