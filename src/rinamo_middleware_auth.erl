@@ -108,7 +108,7 @@ tokenize_auth_header(HeaderValue) ->
 -include_lib("eunit/include/eunit.hrl").
 
 auth_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/access_key.txt"),
+    {_, Fixture} = file:read_file("tests/fixtures/access_key.txt"),
     binary_to_list(Fixture).
 
 tokenize_auth_header_test() ->

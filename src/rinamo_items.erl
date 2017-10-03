@@ -276,15 +276,15 @@ collect_key_schema([], Acc) ->
 -include_lib("eunit/include/eunit.hrl").
 
 hash_table_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/hash_table.json"),
+    {_, Fixture} = file:read_file("tests/fixtures/hash_table.json"),
     Fixture.
 
 range_table_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/range_table.json"),
+    {_, Fixture} = file:read_file("tests/fixtures/range_table.json"),
     Fixture.
 
 item_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/item.json"),
+    {_, Fixture} = file:read_file("tests/fixtures/item.json"),
     Fixture.
 
 put_item_test() ->

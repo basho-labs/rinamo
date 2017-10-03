@@ -179,15 +179,15 @@ query(DynamoRequest, AWSContext) ->
 -include_lib("eunit/include/eunit.hrl").
 
 table_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/hash_table.json"),
+    {_, Fixture} = file:read_file("tests/fixtures/hash_table.json"),
     Fixture.
 
 item_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/item.json"),
+    {_, Fixture} = file:read_file("tests/fixtures/item.json"),
     Fixture.
 
 get_request_fixture() ->
-    {_, Fixture} = file:read_file("../tests/fixtures/get_item_request.json"),
+    {_, Fixture} = file:read_file("tests/fixtures/get_item_request.json"),
     Fixture.
 
 create_table_test() ->
